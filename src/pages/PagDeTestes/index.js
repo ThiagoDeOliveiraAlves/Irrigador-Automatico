@@ -2,29 +2,29 @@ import React from "react";
 import {View, ScrollView, Text, TouchableOpacity, TextInput} from "react-native";
 import styles from "./style";
 import {fetchGetHistoricoIrrigacao} from "../../../API";
-import {salvarHistoricoIrrigacao, lerArquivo} from "../../../Services";
+import {salvarHistoricoIrrigacao, lerArquivo, apagarDados} from "../../../Services";
 
 export default function(){
 
     const [dadoTeste, setDadoTeste] = React.useState(null);
+    const [content, setContent] = React.useState("Teste: ");
+    const [irrHist, setIrrHist] = React.useState("");
+
     const salvar = async () =>{
         const data = salvarHistoricoIrrigacao(dadoTeste);
         setDadoTeste(data);
     }
-
-    const [content, setContent] = React.useState("Teste: ");
     const lerDoc = async () =>{
         const text = lerArquivo();
         setContent(text);
     }
-
-    const [irrHist, setIrrHist] = React.useState("");
-
     const getHistoricoIrrigacao = async () => {
         const data = fetchGetHistoricoIrrigacao();
         setIrrHist(data);
     }
-
+    const apagar = async () =>{
+        apagarDados();
+    }
     return(
         <ScrollView >
             <View style={styles.view}>
@@ -44,6 +44,12 @@ export default function(){
                     onPress={(() => lerDoc())}
                 >
                     <Text style={styles.buttonText}>Ler documento</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.button}
+                    onPress={(() => apagar())}
+                >
+                    <Text style={styles.buttonText}>Apagar dados</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.text}>Conteúdo do arquivo:</Text>
