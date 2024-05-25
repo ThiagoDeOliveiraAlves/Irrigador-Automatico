@@ -2,13 +2,14 @@ import React from "react";
 import {View, ScrollView, Text, TouchableOpacity, TextInput} from "react-native";
 import styles from "./style";
 import {fetchGetHistoricoIrrigacao} from "../../../API";
-import {salvarHistoricoIrrigacao, lerArquivo, apagarDados} from "../../../Services";
+import {salvarHistoricoIrrigacao, lerArquivo, apagarDados, calcPeriod, getAllDataPeriod} from "../../../Services";
 
 export default function(){
 
     const [dadoTeste, setDadoTeste] = React.useState(null);
     const [content, setContent] = React.useState("Teste: ");
     const [irrHist, setIrrHist] = React.useState("");
+    const [time, setTime] = React.useState("");
 
     const salvar = async () =>{
         const data = salvarHistoricoIrrigacao(dadoTeste);
@@ -24,6 +25,10 @@ export default function(){
     }
     const apagar = async () =>{
         apagarDados();
+    }
+
+    const calcPeriodo = () =>{
+        calcPeriod(time);
     }
     return(
         <ScrollView >
@@ -63,6 +68,18 @@ export default function(){
                 </TouchableOpacity>
                 <Text style={styles.text}>Histórico de irrigação:</Text>
                 <Text style={styles.text}>{irrHist}</Text>
+
+                <Text style={styles.text}>Calcular período </Text>
+                    <TextInput style={styles.input}
+                    onChangeText={setTime}
+                    value={time}
+                    
+                    />
+                <TouchableOpacity style={styles.button}
+                    onPress={(() => calcPeriodo())}
+                >
+                    <Text style={styles.buttonText}>Calcular período</Text>
+                </TouchableOpacity>
             </View>
         </ScrollView>
     )
