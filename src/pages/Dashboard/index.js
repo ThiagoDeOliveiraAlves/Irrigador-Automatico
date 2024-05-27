@@ -1,6 +1,6 @@
 import React from "react";
 import {View, Text, TextInput, TouchableOpacity} from "react-native";
-import {gerarGrafico, getAllDataPeriod, calcularPeriodo} from "../../../Services";
+import {gerarGrafico, getAllDataPeriod, dashboardIrrigationPeriod, dashboardIrrigationDate } from "../../../Services";
 import styles from "./style";
 
 
@@ -8,6 +8,7 @@ export default function Dashboard(){
 
     const [startDate, setStartDate] = React.useState(0);
     const [endDate, setEndDate] = React.useState(0);
+    const [format, setFormat] = React.useState("");
 
     const formatStartDate = (text) =>{
         let formatedDate = text.replace(/\D/g, '');
@@ -41,11 +42,17 @@ export default function Dashboard(){
     }
 
     const genDashboard = async () =>{
+        console.log("---------------------------");
         const sDate = startDate.replaceAll("/", "");
         const eDate = endDate.replaceAll("/", "");
         console.log(sDate);
         console.log(eDate);
-        await getAllDataPeriod(sDate, eDate);
+        const arr = await getAllDataPeriod(sDate, eDate);
+        const dateArr = dashboardIrrigationDate(arr, "weeks");
+        console.log("--CONTEÚDO DO VETOR TESTE--");
+        for(let i = 0; i<dateArr.length; i++){
+            console.log(dateArr[i]);
+        }
     }
 
     return(
