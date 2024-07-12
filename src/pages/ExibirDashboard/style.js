@@ -21,7 +21,36 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         alignContent: "center",
     },
-    
+    picker:{
+        backgroundColor: "white",
+        width: 150,
+        height: 10,
+    },
+    viewPoints:{
+        height: 20,
+        marginLeft: 40,
+        flexDirection: "row",
+        marginVertical: 30,
+    },
+    waterChartDataText:{
+        color: "#31c2c4",
+        fontSize: 18, 
+        fontWeight: "bold",
+        marginHorizontal: 5,
+    },
+    dateChartDataText:{
+        color: "#9bb1bf",
+        fontSize: 18, 
+        fontWeight: "bold",
+        marginHorizontal: 5,
+    },
+
+    khwChartDataText:{
+        color: "yellow",
+        fontSize: 18, 
+        fontWeight: "bold",
+        marginHorizontal: 5,
+    },
     title:{
         marginTop: 20,
         fontSize: 24,

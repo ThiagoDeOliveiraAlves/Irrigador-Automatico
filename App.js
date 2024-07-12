@@ -6,11 +6,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import Inicio from "./src/pages/Inicio";
-import Dashboard from "./src/pages/Dashboard";
+import ExibirDashboard from "./src/pages/ExibirDashboard";
 import DefinirUmidade from "./src/pages/DefinirUmidade";
 import GerenciarSensor from "./src/pages/GerenciarSensor";
 import GerenciarBomba from './src/pages/GerenciarBomba';
 import PagDeTestes from './src/pages/PagDeTestes';
+import Testes from "./src/pages/Teste"
 
 //const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -23,8 +24,9 @@ export default function App() {
       <Drawer.Screen name="Definir níveis de umidade" component={DefinirUmidade}/>
       <Drawer.Screen name="Gerenciar sensores" component={GerenciarSensor}/>
       <Drawer.Screen name="Gerenciar Bomba" component={GerenciarBomba}/>
-      <Drawer.Screen name="Exibir Dashboard" component={Dashboard}/>
+      <Drawer.Screen name="Exibir Dashboard" component={ExibirDashboard}/>
       <Drawer.Screen name="Página de testes" component={PagDeTestes}/>
+      <Drawer.Screen name="Testes" component={Testes}/>
       
     </Drawer.Navigator>
     </NavigationContainer>
@@ -41,6 +43,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
-
-

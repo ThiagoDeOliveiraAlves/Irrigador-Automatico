@@ -1,12 +1,175 @@
 import * as FileSystem from "expo-file-system";
 import { DateTime, Duration } from "luxon";
 
-
-
 const path = FileSystem.documentDirectory + "/data";
+const sysPath = FileSystem.documentDirectory + "/sysData";
 
 //A ser desenvolvida
 export function fetchAtualizarDecoder(data) {
+}
+//Salva os níveis de umidade mínima e máxima no banco de dados
+export async function salvarNiveisUmidade(min, max) {
+    try {
+        let umidade = min + "-" + max;
+        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+
+        if (fileInfo.exists) {
+            console.log("Existe");
+            let content = "";
+            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = content.trim();
+            let lines = content.split("\n");
+            if (lines.length > 1) {
+                console.log("Lines é maior que 1");
+                lines[0] = umidade + "\n";
+            }
+            else {
+                console.log("Lines é menor que 1");
+                lines[0] = umidade + "\n";
+                lines[1] = "empty";
+            }
+            content = lines[0] + lines[1];
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
+        }
+        else {
+            console.log("--O ARQUIVO NÃO EXISTE--");
+            console.log("Criando diretório...");
+            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "");
+            fileInfo = await FileSystem.getInfoAsync(sysPath);
+            if (fileInfo.exists) {
+                console.log("Diretório criado com sucesso");
+                let content = "";
+                content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+                content = content.trim();
+                let lines = content.split("\n");
+                if (lines.length > 1) {
+                    lines[0] = umidade + "\n";
+                }
+                else {
+                    lines[0] = umidade + "\n";
+                    lines[1] = "empty";
+                }
+                content = lines[0] + lines[1];
+                await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
+            }
+            else {
+                console.log("Erro ao criar o diretório");
+            }
+
+        }
+        console.log("Imprimindo o sysData: ");
+        let content = "";
+        content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+        console.log(content);
+    }
+    catch (error) {
+        console.log("Erro em salvarNiveisUmidade: " + error.message);
+    }
+
+}
+//Salva a vazão e a potência da bomba d'água no banco de dados
+export async function salvarDadosBombaAgua(vazao, potencia) {
+    try {
+        console.log("----Função salvarDadosBombaAgua foi chamada----");
+        let dados = vazao + "-" + potencia;
+        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+        if (fileInfo.exists) {
+            let content = "";
+            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = content.trim();
+            let lines = content.split("\n");
+            if (lines.length > 1) {
+                lines[1] = dados;
+            }
+            else {
+                lines[0] = "empty";
+                lines[1] = dados;
+            }
+            content = lines[0] + "\n" + lines[1];
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
+        }
+        else {
+            console.log("--O ARQUIVO NÃO EXISTE--");
+            console.log("Criando diretório...");
+            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "");
+            fileInfo = await FileSystem.getInfoAsync(sysPath);
+            if (fileInfo.exists) {
+                console.log("Diretório criado com sucesso");
+                let content = "";
+                content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+                content = content.trim();
+                let lines = content.split("\n");
+                if (lines.length > 1) {
+                    lines[1] = dados;
+                }
+                else {
+                    lines[0] = "empty\n";
+                    lines[1] = dados;
+                }
+                content = lines[0] + lines[1];
+                await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
+            }
+            else {
+                console.log("Erro ao criar o diretório");
+            }
+
+        }
+        console.log("Imprimindo o sysData: ");
+        let content = "";
+        content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+        console.log(content);
+    }
+    catch (error) {
+        console.log("Erro em salvarDadosBombaAgua: " + error.message);
+    }
+}
+
+//retorna os níveis de umidade mínima e máxima salvos no banco de dados
+export async function getNiveisUmidade() {
+    try {
+        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+        if (fileInfo.exists) {
+            let content = "";
+            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = content.trim();
+            let lines = content.split("\n");
+            return lines[0];
+        }
+        else {
+            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "20-40\nempty");
+            fileInfo = await FileSystem.getInfoAsync(sysPath);
+            return "20-40";
+        }
+    }
+    catch (error) {
+        console.log("Erro em getNiveisUmidade: " + error.message);
+    }
+}
+
+//retorna os dados da bomba de água salvos no banco de dados
+export async function getDadosBomba() {
+    try {
+        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+        if (fileInfo.exists) {
+            let content = "";
+            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = content.trim();
+            let lines = content.split("\n");
+            return lines[1];
+        }
+        else {
+            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
+            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "20-40\n0-0");
+            fileInfo = await FileSystem.getInfoAsync(sysPath);
+            return "0-0";
+        }
+    }
+    catch (error) {
+        console.log("Erro em getDadosBomba: " + error.message);
+    }
 }
 
 //salva o histórico de irrigações no banco de dados
@@ -275,7 +438,7 @@ export function dashboardIrrigationPeriod(arr, format) {
         const len = arr.length;
         const periodArr = [];
         let period = 0;
-        if (format == "day") {
+        if (format == "daily") {
             //obs: tem que ver se o vetor não possui posições vazias
             /*Aqui na verdade vamos ter que guardar os períodos em posições diferentes, no caso, iremos mostrar um 
             gráfico do dia com todas as irrigações feitas no dia, nesse caso, também teremos que fazer com que a função
@@ -312,7 +475,6 @@ export function dashboardIrrigationPeriod(arr, format) {
             let date = DateTime.fromFormat(arr[0].substring(0, 8), "ddMMyyyy");
 
             for (let i = 0; i < len; i++) {
-                console.log("-->Iteração " + i);
                 let thisDate = DateTime.fromFormat(arr[i].substring(0, 8), "ddMMyyyy");
 
                 const week1 = date.weekNumber;
@@ -371,20 +533,20 @@ export function dashboardIrrigationDate(arr, format) {
     try {
         const len = arr.length;
 
-        if (format == "day") {
+        if (format == "daily") {
             //obs: tem que ver se o vetor não possui posições vazias
             //nesse caso, teremos que armazenar os horários ao invés das datas
             const dateArr = arr[0].split(";");
             dateArr[0] = dateArr[0].substring(9);
-            
+
             return dateArr;
         }
         else if (format == "days") {
             let dateArr = []
             for (let i = 0; i < len; i++) {
                 //pegando a data
-                arr[i] = arr[i].substring(0, 8);
-                let aux = DateTime.fromFormat(arr[i], "ddMMyyyy");
+                let date = arr[i].substring(0, 8);
+                let aux = DateTime.fromFormat(date, "ddMMyyyy");
                 let aux1 = aux.toFormat("dd/MM/yyyy");
                 dateArr.push(aux1);
             }
@@ -393,17 +555,21 @@ export function dashboardIrrigationDate(arr, format) {
         else if (format == "weeks") {
             let dateArr = [];
             let lastDate = 0;
-            let date = DateTime.fromFormat(arr[0].substring(0, 8), "ddMMyyyy");
+            let firstDate = arr[0].substring(0, 8);
+            let date = DateTime.fromFormat(firstDate, "ddMMyyyy");
+
             let week1 = date.weekNumber;
             let year1 = date.weekYear;
+
             let aux3 = getStartAndEndOfWeek(week1, year1);
+
             //para o caso de a data de início informada não ser a data correspondente a data do início de sua semana
             aux3 = aux3.substring(11);
             aux3 = date.toFormat("dd/MM/yyyy") + "-" + aux3;
             dateArr.push(aux3);
 
             for (let i = 0; i < len; i++) {
-                
+
                 let thisDate = DateTime.fromFormat(arr[i].substring(0, 8), "ddMMyyyy");
 
                 week1 = date.weekNumber;
@@ -422,14 +588,14 @@ export function dashboardIrrigationDate(arr, format) {
                     }
                 }
                 else {
-                    if (arr[i].length != "") { 
+                    if (arr[i].length != "") {
                         dateArr.push(getStartAndEndOfWeek(week2, year2));
                         date = DateTime.fromFormat(dateAux, "ddMMyyyy");
                     }
                 }
-                if(arr[i].length > ""){
+                if (arr[i].length > "") {
                     lastDate = arr[i].substring(0, 8);
-                }  
+                }
             }
             //substituindo a data referente ao fim da semana pela data da última irrigação feita no sistema (dentro do período que o usuário informou)
             let dateArrLength = dateArr.length;
@@ -459,14 +625,54 @@ export function getStartAndEndOfWeek(weekNumber, year) {
     let endOfWeek = startOfWeek.plus({ days: 6 });
 
     let startAndEndOfWeek = startOfWeek.toFormat("dd/MM/yyyy") + "-" + endOfWeek.toFormat("dd/MM/yyyy");
-
     return startAndEndOfWeek;
-
 }
 
-//A ser desenvolvido
-export async function generateDashboard() {
+//retorna um vetor com a quantidade de litros de água usada
+export async function calcWaterLiters(arr) {
+    /*O valor da vazão é especificado em litros por hora. Transformamos o periodo de segundos para horas e calculamos a quantidade de água bombeada*/
+    try {
+        let dadosBomba = await getDadosBomba();
+        let dadosBombaArr = dadosBomba.split("-");
+        let vazao = parseFloat(dadosBombaArr[0]);
+        let litrosAgua = [];
+        let aux = 0;
 
+        for (let i = 0; i < arr.length; i++) {
+            if(arr[i] != ""){
+                aux = (parseFloat(arr[i]) / 3600) * vazao;
+                aux = parseFloat(aux.toFixed(4));
+                litrosAgua.push(aux);
+                console.log(litrosAgua[i]);
+            }
+        }
+        return litrosAgua;
+    }
+    catch (error) {
+        console.log("Erro em calcWaterLiters: " + error.message);
+    }
 }
 
+export async function calcKWH(arr){
+    try {
+        let dadosBomba = await getDadosBomba();
+        let dadosBombaArr = dadosBomba.split("-");
+        let potencia = parseFloat(dadosBombaArr[1]);
+        let kwh = [];
+        let aux = 0;
+        for (let i = 0; i < arr.length; i++) {
+            if(arr[i] != ""){
+                //transformação da W para KW (potencia/1000)
+                aux = (parseFloat(arr[i]) / 3600) * potencia/1000;
+                aux = parseFloat(aux.toFixed(4));
+                kwh.push(aux);
+                console.log(kwh[i]);
+            }
+        }
+        return kwh;
 
+    }
+    catch(error){
+        console.log("Ero em calcKWH: " + error.mesage);
+    }
+}
