@@ -1,7 +1,7 @@
 import {salvarHistoricoIrrigacao} from "../Services";
 
-//const baseUrl = "http:/192.168.0.56";
-const baseUrl = "http:/192.168.43.34";
+const baseUrl = "http:/192.168.0.56";
+//const baseUrl = "http:/192.168.43.34";
 
 //GET
 export async function fetchAtualizar(){

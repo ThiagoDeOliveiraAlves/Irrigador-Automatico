@@ -3,14 +3,14 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import styles from "./style";
 import { TextInput } from "react-native-gesture-handler";
 import { fetchDefinirNiveisUmidade } from "../../../API";
-import { salvarNiveisUmidade, getNiveisUmidade } from "../../../Services";
+import { salvarNiveisUmidade, getHumidityLevels } from "../../../Services";
 
 export default function DefinirUmidade() {
     const [umidadeOn, setUmidadeOn] = React.useState(null);
     const [umidadeOff, setUmidadeOff] = React.useState(null);
 
     const getData = async () => {
-        let data = await getNiveisUmidade();
+        let data = await getHumidityLevels();
         let aux = data.split("-");
         setUmidadeOn(aux[0]);
         setUmidadeOff(aux[1]);

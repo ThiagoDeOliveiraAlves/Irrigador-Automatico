@@ -3,9 +3,15 @@ import {StyleSheet} from "react-native";
 const styles = StyleSheet.create({
     view:{
         flex: 1,
-        height: 1000,
+        height: "100%",
         alignItems: "center",
         backgroundColor: "#161617",
+    },
+    title:{
+        marginTop: 20,
+        fontSize: 24,
+        color: "white",
+        fontWeight: "800"
     },
     text:{
         marginTop: 20,
@@ -24,9 +30,21 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: "#262625",
     },
-    button:{
+    blueButton:{
         marginTop: 20,
         backgroundColor: "blue",
+        borderRadius: 20,
+        zIndex: 2,
+    },
+    greenButton:{
+        marginTop: 20,
+        backgroundColor: "darkgreen",
+        borderRadius: 20,
+        zIndex: 2,
+    },
+    redButton:{
+        marginTop: 20,
+        backgroundColor: "darkred",
         borderRadius: 20,
         zIndex: 2,
     },

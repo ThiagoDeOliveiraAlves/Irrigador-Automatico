@@ -1,200 +1,307 @@
 import * as FileSystem from "expo-file-system";
 import { DateTime, Duration } from "luxon";
 
-const path = FileSystem.documentDirectory + "/data";
-const sysPath = FileSystem.documentDirectory + "/sysData";
+//diretorio onde ficam os arquivos do banco de dados
+const folderPath = FileSystem.documentDirectory + "/IrrigadorAutomatico";
+//armazena os níveis de umidade mínimo e máximo
+const humidityLevels = folderPath + "/HumidityLevels.txt"
+//arquivo com o historico de irrigações
+const irrigationData = folderPath + "/IrrigationData.txt";
+//arquivo com os dados das bombas de água utilizadas
+const waterPumpData = folderPath + "/WaterPumpData.txt";
 
-//A ser desenvolvida
-export function fetchAtualizarDecoder(data) {
+
+//-----------------------------Será substituído--------------------------------//
+/*
+const path = FileSystem.documentDirectory + "/data";
+//usada para salvar os niveis de umidade e os dados da bomba de água
+const sysPath = FileSystem.documentDirectory + "/sysData";
+*/
+//----------------------------------------------------------------------------//
+
+//cria o diretório e os arquivos necessários para armazenar os dados caso não existam
+export async function criarArquivos(){
+    try{
+        let fileInfo = await FileSystem.getInfoAsync(folderPath);
+
+        if(!fileInfo.exists){
+            console.log("O diretório não existe. Criando pasta irrigadorAutomatico");
+            //cria a pasta IrrigadorAutomatico
+            await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
+
+            //cria o arquivo HumidityLevels.txt
+            await FileSystem.writeAsStringAsync(humidityLevels, "20-40");
+
+            //cria o arquiuvo IrrigationData.txt
+            await FileSystem.writeAsStringAsync(irrigationData, "");
+            //cria o arquivo WaterPumpData.txt
+            await FileSystem.writeAsStringAsync(waterPumpData, "1,0,0\n1,0,0");
+
+            fileInfo = await FileSystem.getInfoAsync(folderPath);
+
+            if(fileInfo.exists){
+                console.log("Diretório Criado com Sucesso!");
+            }
+            else{
+                console.log("ERRO: não foi possível criar o diretório");
+            }
+        } 
+        else{
+            //no caso de algum arquivo ter sido excluido//
+
+            fileInfo = await FileSystem.getInfoAsync(humidityLevels);
+            if(!fileInfo.exists){
+                //cria e insere o valor padrão para níveis de umidade
+                await FileSystem.writeAsStringAsync(humidityLevels, "20-40");
+            }
+
+            fileInfo = await FileSystem.getInfoAsync(irrigationData);
+            if(!fileInfo.exists){
+                await FileSystem.writeAsStringAsync(irrigationData, "");
+            }
+
+            fileInfo = await FileSystem.getInfoAsync(waterPumpData);
+            if(!fileInfo.exists){
+                await FileSystem.writeAsStringAsync(waterPumpData, "1,0,0\n1,0,0");
+            }
+        }     
+    }
+    catch (error){
+        console.log("Erro: em criarArquivos -> " + error.mesage);
+    }
 }
+
+//______________________________________Níveis de umidade - HumidityLevels.txt______________________________________//
+
 //Salva os níveis de umidade mínima e máxima no banco de dados
 export async function salvarNiveisUmidade(min, max) {
     try {
         let umidade = min + "-" + max;
-        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+
+        //cria o diretório e os arquivos caso não existam
+        await criarArquivos();
+
+        let fileInfo = await FileSystem.getInfoAsync(humidityLevels);  
 
         if (fileInfo.exists) {
-            console.log("Existe");
             let content = "";
-            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = await FileSystem.readAsStringAsync(humidityLevels);
             content = content.trim();
-            let lines = content.split("\n");
-            if (lines.length > 1) {
-                console.log("Lines é maior que 1");
-                lines[0] = umidade + "\n";
-            }
-            else {
-                console.log("Lines é menor que 1");
-                lines[0] = umidade + "\n";
-                lines[1] = "empty";
-            }
-            content = lines[0] + lines[1];
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
-        }
-        else {
-            console.log("--O ARQUIVO NÃO EXISTE--");
-            console.log("Criando diretório...");
-            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "");
-            fileInfo = await FileSystem.getInfoAsync(sysPath);
-            if (fileInfo.exists) {
-                console.log("Diretório criado com sucesso");
-                let content = "";
-                content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
-                content = content.trim();
-                let lines = content.split("\n");
-                if (lines.length > 1) {
-                    lines[0] = umidade + "\n";
-                }
-                else {
-                    lines[0] = umidade + "\n";
-                    lines[1] = "empty";
-                }
-                content = lines[0] + lines[1];
-                await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
-            }
-            else {
-                console.log("Erro ao criar o diretório");
-            }
+            //escreve os novos níveis de umidade
+            await FileSystem.writeAsStringAsync(humidityLevels, umidade);
 
+            console.log("Níveis de Umidade Atualizados:");
+            console.log("De: " + content + "(mín-máx)");
+            console.log("Para: " + umidade + "(mín-máx)");
         }
-        console.log("Imprimindo o sysData: ");
-        let content = "";
-        content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
-        console.log(content);
     }
     catch (error) {
-        console.log("Erro em salvarNiveisUmidade: " + error.message);
+        console.log("Erro: em salvarNiveisUmidade -> " + error.message);
     }
-
 }
+
+//imprime e retorna os dados do arquivo HumidityLevels.txt
+export async function getHumidityLevels(){
+    try{
+        await criarArquivos();
+
+        let fileInfo = await FileSystem.getInfoAsync(humidityLevels);
+        if (fileInfo.exists) {
+
+            console.log("---Imprimindo o HumidityLevels.txt---");   
+            let content = "";
+            content = await FileSystem.readAsStringAsync(humidityLevels);
+            content = content.trim();
+            console.log(content);
+            console.log("-------------------------------------");
+            return content;
+        }
+    }
+    catch(error){
+        console.log("Erro: em getHumidityLevels -> " + error.message);
+    }
+}
+//__________________________________________________________________________________________________________________//
+
+//_________________________________________Bomba de água - WaterPumpData.txt________________________________________//
+
 //Salva a vazão e a potência da bomba d'água no banco de dados
-export async function salvarDadosBombaAgua(vazao, potencia) {
+export async function setWaterPumpData(vazao, potencia) {
     try {
-        console.log("----Função salvarDadosBombaAgua foi chamada----");
-        let dados = vazao + "-" + potencia;
-        let fileInfo = await FileSystem.getInfoAsync(sysPath);
+        let dados = vazao + "," + potencia;
+
+        //cria o diretório e os arquivos caso não existam
+        await criarArquivos();
+
+
+        let fileInfo = await FileSystem.getInfoAsync(waterPumpData);
+
         if (fileInfo.exists) {
+            let isUpdated = false;
             let content = "";
-            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+            content = await FileSystem.readAsStringAsync(waterPumpData);
             content = content.trim();
             let lines = content.split("\n");
-            if (lines.length > 1) {
-                lines[1] = dados;
-            }
-            else {
-                lines[0] = "empty";
-                lines[1] = dados;
-            }
-            content = lines[0] + "\n" + lines[1];
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
-        }
-        else {
-            console.log("--O ARQUIVO NÃO EXISTE--");
-            console.log("Criando diretório...");
-            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "");
-            fileInfo = await FileSystem.getInfoAsync(sysPath);
-            if (fileInfo.exists) {
-                console.log("Diretório criado com sucesso");
-                let content = "";
-                content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
-                content = content.trim();
-                let lines = content.split("\n");
-                if (lines.length > 1) {
-                    lines[1] = dados;
+            
+            //verifica se existe algum registro com os mesmo dados
+            for(let i = 1; i < lines.length; i++){
+                let lineArr = lines[i].split(",");
+                let vazPot = lineArr[1] + "," + lineArr[2]; 
+                //caso haja, atualiza somente  primeira linha (representa a bomba de água atual)
+                if(dados == vazPot){
+                    //atualizando primeira linha
+                    lines[0] = lineArr[0] + "," + dados;
+                    isUpdated = true;
+                    break;
                 }
-                else {
-                    lines[0] = "empty\n";
-                    lines[1] = dados;
-                }
-                content = lines[0] + lines[1];
-                await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", content);
-            }
-            else {
-                console.log("Erro ao criar o diretório");
             }
 
+            //caso o registro seja novo
+            if(!isUpdated){
+                let id = lines.length;
+                let newData = id + "," + dados;
+                //atualiza a primeira linha
+                lines[0] = newData;
+                //cria um novo registro com os dados infrmados
+                lines.push(newData);
+            }
+
+            content = "";
+
+            for(let i = 0; i < lines.length; i++){
+                lines[i] += "\n" ;
+                content += lines[i];
+            }
+
+            //salva os dados no banco de dados
+            await FileSystem.writeAsStringAsync(waterPumpData, content);
         }
-        console.log("Imprimindo o sysData: ");
+    }
+    catch (error) {
+        console.log("Erro: em salvarDadosBombaAgua -> " + error.message);
+    }
+}
+
+//imprime e retorna todos os registros do arquivo WaterPumpData.txt
+export async function getWaterPumpData(){
+    try{
+        await criarArquivos();
+
+        console.log("---Imprimindo o WaterPumpData.txt---");   
         let content = "";
-        content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
+        content = await FileSystem.readAsStringAsync(waterPumpData);
         console.log(content);
+        console.log("------------------------------------");
+        return content;
     }
-    catch (error) {
-        console.log("Erro em salvarDadosBombaAgua: " + error.message);
-    }
-}
-
-//retorna os níveis de umidade mínima e máxima salvos no banco de dados
-export async function getNiveisUmidade() {
-    try {
-        let fileInfo = await FileSystem.getInfoAsync(sysPath);
-        if (fileInfo.exists) {
-            let content = "";
-            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
-            content = content.trim();
-            let lines = content.split("\n");
-            return lines[0];
-        }
-        else {
-            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "20-40\nempty");
-            fileInfo = await FileSystem.getInfoAsync(sysPath);
-            return "20-40";
-        }
-    }
-    catch (error) {
-        console.log("Erro em getNiveisUmidade: " + error.message);
+    catch(error){
+        console.log("Erro: em getWaterPumpData -> " +error.message);
     }
 }
 
-//retorna os dados da bomba de água salvos no banco de dados
-export async function getDadosBomba() {
-    try {
-        let fileInfo = await FileSystem.getInfoAsync(sysPath);
-        if (fileInfo.exists) {
-            let content = "";
-            content = await FileSystem.readAsStringAsync(sysPath + "/sysData.txt");
-            content = content.trim();
-            let lines = content.split("\n");
-            return lines[1];
-        }
-        else {
-            await FileSystem.makeDirectoryAsync(sysPath, { intermediates: true });
-            await FileSystem.writeAsStringAsync(sysPath + "/sysData.txt", "20-40\n0-0");
-            fileInfo = await FileSystem.getInfoAsync(sysPath);
-            return "0-0";
-        }
+//imprime e retorna os dados da bomba de agua atual
+export async function getCurrentWPData(){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        console.log("----Dados da bomba de água atual----");
+        console.log("Id,Vazão,Potência");
+        let lines = waterPumpArr.split("\n");
+        console.log(lines[0]);
+        return lines[0];
     }
-    catch (error) {
-        console.log("Erro em getDadosBomba: " + error.message);
+    catch(error){
+        console.log("Erro: em getCurrentWPData -> " + error.mesage);
     }
 }
+
+//imprime e retorna o ID da bomba de agua atual
+export async function getCurrentWPId(){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let lines = waterPumpArr.split("\n");
+        let lineData = lines[0].split(",");
+        let id = lineData[0];
+        console.log("---ID da bomba de água atual---");
+        console.log(id);
+        console.log("----------------------------------");
+        return id;
+    }
+    catch(error){
+        console.log("Erro: em getCurrentWPId -> " + error.mesage);
+    }
+}
+
+//imprime e retorna a vazao da bomba de agua atual
+export async function getCurrentWPFlowRate(){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let lines = waterPumpArr.split("\n");
+        let lineData = lines[0].split(",");
+        let flowRate = lineData[1];
+        console.log("---Vazao da bomba de água atual---");
+        console.log(flowRate);
+        console.log("----------------------------------");
+        return flowRate;
+    }
+    catch(error){
+        console.log("Erro: em getCurrentWPFlowRate -> " + error.mesage);
+    }
+}
+
+//imprime e retorna a potencia da bomba de agua atual
+export async function getCurrentWPPower(){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let lines = waterPumpArr.split("\n");
+        let lineData = lines[0].split(",");
+        let power = lineData[2];
+        console.log("---Potência da bomba de água atual---");
+        console.log(power);
+        console.log("----------------------------------");
+        return power;
+    }
+    catch(error){
+        console.log("Erro: em getCurrentWPL -> " + error.mesage);
+    }
+}
+
+//apaga os dados do arquivo WaterPumpData.txt
+export async function deleteAllWPData(){
+    try{
+        await FileSystem.writeAsStringAsync(waterPumpData, "1,0,0\n1,0,0");
+        console.log("Os dados do WaterPumpData.txt foram deletados com sucesso!");
+    }
+    catch(error){
+        console.log("Erro: em deleteAllWaterPumpData -> " + error.message);
+    }
+}
+
+//__________________________________________________________________________________________________________________//
+
+//____________________________________Registro de irrigações - IrrigationData.txt___________________________________//
+
+
+//<------------------------------V--Parcialmentte atualizadas--V------------------------------>\\
 
 //salva o histórico de irrigações no banco de dados
 export async function salvarHistoricoIrrigacao(response) {
     try {
         if (response.length >= 9) {
-            let fileInfo = await FileSystem.getInfoAsync(path);
+
+            await criarArquivos();
+
+            let fileInfo = await FileSystem.getInfoAsync(irrigationData);
+
             if (fileInfo.exists) {
                 await salvarHistorico(response);
-            }
-            else {
-                console.log("--O ARQUIVO NÃO EXISTE--");
-                console.log("Criando diretório...");
-                await FileSystem.makeDirectoryAsync(path, { intermediates: true });
-                /*antes de escrever, é preciso armazenar o texto do arquivo, concatenar esse texto com os novos dados 
-                para então sim escrever no arquivo, porque senão, os dados anteriores serão perdidos*/
-                await FileSystem.writeAsStringAsync(path + "/data.txt", "");
-                fileInfo = await FileSystem.getInfoAsync(path);
-                if (fileInfo.exists) {
-                    console.log("Diretório criado com sucesso");
-                    await salvarHistorico(response);
-                }
-                else {
-                    console.log("Erro ao criar o diretório");
-                }
             }
         }
         else {
@@ -202,7 +309,7 @@ export async function salvarHistoricoIrrigacao(response) {
         }
     }
     catch (error) {
-        console.log("Erro: " + error.message);
+        console.log("Erro: em salvarHistoricoIrrigacao -> " + error.message);
     }
 }
 
@@ -210,57 +317,66 @@ export async function salvarHistoricoIrrigacao(response) {
 export async function salvarHistorico(response) {
     try {
         const arr = response.split(";");
-        let content = "";
-        content = await FileSystem.readAsStringAsync(path + "/data.txt");
-        content = content.trim();
-        let count = 0;
-        let data = "";
-        //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
-        if (arr[0].charAt(0) == "-") {
-            //content = content.concat(arr[0] + ";");
-            data += arr[0] + ";";
-            count++;
-        }
-        let lastLine = await lerUltimaLinha();
-        let lastDate = lastLine.substring(0, 9);
 
-        for (count; count < arr.length; count++) {
-            let dateArr = arr[count].substring(0, 9);
-            //Testa se a irrigação foi feita no mesmo dia que o último registro salvo no histórico
-            if (dateArr == lastDate) {
-                console.log("Registro: " + arr[count]);
-                let formatedData = arr[count].substring(9);
-                //se falso, significa que o dado possui apenas o horario de inicio (logo não devemos por ;).
-                if (formatedData.length > 8) {
-                    formatedData += ";";
-                }
-                data += formatedData;
-                lastDate = dateArr;
-            }
-            else {
-                if (count == arr.length - 1) {
-                    data += "\n" + arr[count];
-                }
-                else {
-                    data += "\n" + arr[count] + ";";
-                }
-                lastDate = dateArr;
-            }
+        let content = "";
+        content = await FileSystem.readAsStringAsync(irrigationData);
+        content = content.trim();
+
+        let pos = 0;
+        let data = "";
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let currentWaterPumpId = waterPumpArr[0].substring(1);
+
+        //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
+        if (arr[pos].charAt(0) == "-") {
+            //content = content.concat(arr[0] + ";");
+            data += arr[pos];
+            pos++;
         }
+
+        //Para não pular a primeira linha caso o arquivo esteja vazio
+        if(content.length < 1 && data.length < 1){
+            data += currentWaterPumpId + " " + arr[pos];
+            pos++
+        }
+
+        //adicionando os registros restantes com quebra de linha
+        for (pos; pos < arr.length; pos++) { 
+            data +="\n" + currentWaterPumpId + " " + arr[pos];
+        }
+
         content += data;
-        await FileSystem.writeAsStringAsync(path + "/data.txt", content);
+        //salvando no banco de dados
+        await FileSystem.writeAsStringAsync(irrigationData, content);
     }
     catch (error) {
-        console.log("Erro: " + error.message);
+        console.log("Erro: em salvarHistorico -> " + error.message);
     }
 }
 
 //retorna os dados do banco de dados
-export async function lerArquivo() {
-    const content = await FileSystem.readAsStringAsync(path + "/data.txt");
-    console.log("-- FUNÇÃO: LER ARQUIVO --");
-    return content;
+export async function getIrrigationData() {
+    try{
+        await criarArquivos();
+
+        const content = await FileSystem.readAsStringAsync(irrigationData);
+        console.log("---Imprimindo o HumidityLevels.txt---");
+        console.log(content);
+        console.log("-------------------------------------");
+        
+        return content;   
+    } 
+    catch(error){
+        console.log("Erro: em getIrrigationData -> " + error.message);
+    } 
 }
+
+//__________________________________________________________________________________________________________________//
+
+//<------------------------------V--Não atualizadas--V------------------------------>\\
+
+
 
 //retorna o último registro do banco de dados
 export async function lerUltimaLinha() {

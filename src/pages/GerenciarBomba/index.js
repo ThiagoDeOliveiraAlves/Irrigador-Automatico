@@ -1,7 +1,7 @@
 import React, { useEffect} from "react";
 import {View, Text, TouchableOpacity, Switch, TextInput} from "react-native";
 import { fetchLigarBomba, fetchDesligarBomba, fetchLigarControleManual, fetchDesLigarControleManual } from "../../../API";
-import { salvarDadosBombaAgua, getDadosBomba } from "../../../Services";
+import { getCurrentWPData, getDadosBomba, setWaterPumpData } from "../../../Services";
 import styles from "./style";
 
 
@@ -24,14 +24,14 @@ export default function GerenciarBomba(){
     const [potencia, setPotencia] = React.useState(null);
 
     const getData = async () => {
-        let data = await getDadosBomba();
-        let aux = data.split("-");
-        setVazao(aux[0]);
-        setPotencia(aux[1]);
+        let data = await getCurrentWPData();
+        let aux = data.split(",");
+        setVazao(aux[1]);
+        setPotencia(aux[2]);
     }
 
     const saveData = async () => {
-        await salvarDadosBombaAgua(vazao, potencia);
+        await setWaterPumpData(vazao, potencia);
     }
 
     const [isEnabled, setIsEnabled] = React.useState(false);
@@ -49,6 +49,7 @@ export default function GerenciarBomba(){
     useEffect(() => {
         getData();
     }, []);
+
 
     return(
         <View style={styles.view}>
