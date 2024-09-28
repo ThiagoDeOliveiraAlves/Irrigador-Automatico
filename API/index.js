@@ -1,4 +1,4 @@
-import {salvarHistoricoIrrigacao} from "../Services";
+import {saveIrrigationHistory} from "../Services";
 
 const baseUrl = "http:/192.168.0.56";
 //const baseUrl = "http:/192.168.43.34";
@@ -33,7 +33,7 @@ export async function fetchGetHistoricoIrrigacao(){
         const response = await fetch(baseUrl + "/enviarDadosIrrigacao");
         const data = await response.text();
         console.log("Get Historico de irrigação: " + data);
-        salvarHistoricoIrrigacao();
+        saveIrrigationHistory();
         return data;
     }
     catch(error){

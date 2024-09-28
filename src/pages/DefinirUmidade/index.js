@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
 import styles from "./style";
 import { TextInput } from "react-native-gesture-handler";
 import { fetchDefinirNiveisUmidade } from "../../../API";
-import { salvarNiveisUmidade, getHumidityLevels } from "../../../Services";
+import { saveHumidityLevels, getHumidityLevels } from "../../../Services";
 
 export default function DefinirUmidade() {
     const [umidadeOn, setUmidadeOn] = React.useState(null);
@@ -20,7 +20,7 @@ export default function DefinirUmidade() {
         console.log("sendData was called");
         const data = (umidadeOn + ";" + umidadeOff);
         fetchDefinirNiveisUmidade(data);
-        salvarNiveisUmidade(umidadeOn, umidadeOff);
+        saveHumidityLevels(umidadeOn, umidadeOff);
     }
 
     useEffect(() => {

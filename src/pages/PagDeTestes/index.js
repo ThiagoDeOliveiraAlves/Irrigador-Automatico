@@ -2,11 +2,15 @@ import React from "react";
 import {View, ScrollView, Text, TouchableOpacity, TextInput} from "react-native";
 import styles from "./style";
 import {fetchGetHistoricoIrrigacao} from "../../../API";
-import {salvarHistoricoIrrigacao, apagarDados, calcPeriod, getWaterPumpData, getIrrigationData, deleteAllWPData, getCurrentWPData, getCurrentWPId, getCurrentWPFlowRate, getCurrentWPPower} from "../../../Services";
+import {saveIrrigationHistory, deleteAllIrrigationData, calcPeriod, getWaterPumpData, getIrrigationData, 
+    deleteAllWPData, getCurrentWPData, getCurrentWPId, getCurrentWPFlowRate, getCurrentWPPower, getHumidityLevels,
+    getAllDataPeriod, getRegId, getRegDate, getRegPeriod} from "../../../Services";
 
 export default function(){
+    //usadas para lidar com os níveis de umidade
+    const[humiditylevels, setHumidityLevels] = React.useState("");
+
     //usadas para lidar com os dados da bomba de agua
-    const [newWPData, setNewWPData] = React.useState("");
     const[currentWPData, setCurrentWPData] = React.useState("");
     const[currentWPId, setCurrentWPId] = React.useState("");
     const[currentWPFlowRate, setCurrentWPFlowRate] = React.useState("");
@@ -17,12 +21,20 @@ export default function(){
     const [dadoTeste, setDadoTeste] = React.useState(null);
     const [content, setContent] = React.useState("");
     const [irrHist, setIrrHist] = React.useState("");
+    const [irrReg, setIrrReg] = React.useState("");
+    const [irrRegId, setIrrRegId] = React.useState("");
+    const [irrRegDate, setIrrRegDate] = React.useState("");
+    const [irrRegPeriod, setIrrRegPeriod] = React.useState("");
 
     //usadas para lidar com os calculos
+    const[startAndEndDate, setStartAndEndDate] = React.useState("");
     const [time, setTime] = React.useState("");
 
     ////////////////Niveis de Umidade//////////////////
-
+    const getHumidity = async() =>{
+        let aux = await getHumidityLevels();
+        setHumidityLevels(aux);
+    }
 
     ////////////////Dados da Bomba de Agua//////////////////
     const salvarWPData = async(newWPData) =>{
@@ -57,7 +69,7 @@ export default function(){
 
     ////////////////Registro de Irrigacoes//////////////////
     const salvar = async () =>{
-        const data = salvarHistoricoIrrigacao(dadoTeste);
+        const data = saveIrrigationHistory(dadoTeste);
         setDadoTeste(data);
     }
     const lerIrrigationData = async () =>{
@@ -69,10 +81,29 @@ export default function(){
         setIrrHist(data);
     }
     const apagar = async () =>{
-        apagarDados();
+        deleteAllIrrigationData();
     }
 
+    const regId = async() =>{
+        let aux = getRegId(irrReg);
+        setIrrRegId(aux);
+    }
+    const regDate = async() =>{
+        let aux = getRegDate(irrReg);
+        setIrrRegDate(aux);
+    }
+    const regPeriod = async() =>{
+        let aux = getRegPeriod(irrReg);
+        setIrrRegPeriod(aux);
+    }
+    
+
     ////////////////Calculos//////////////////
+    const getAlldataPeriodTest = async() =>{
+        let data = startAndEndDate.split("-");
+        getAllDataPeriod(data[0], data[1]);
+    }
+
     const calcPeriodo = () =>{
         calcPeriod(time);
     }
@@ -80,7 +111,22 @@ export default function(){
         <ScrollView >
             <View style={styles.view}>
 
-            <Text style={styles.title}>Bomba de água: </Text>
+                <Text style={styles.title}>Níveis de umidade: </Text>
+
+                <TouchableOpacity style={styles.blueButton}
+                    onPress={(() => getHumidity())}
+                >
+                    <Text style={styles.buttonText}>Ver umidade min-max</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.title}>Níveis de umidade: </Text>
+                <Text style={styles.text}>{humiditylevels}</Text>
+
+
+                <Text style={styles.text}>|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
+
+
+                <Text style={styles.title}>Bomba de água: </Text>
 
                 <TouchableOpacity style={styles.blueButton}
                     onPress={(() => getWPData())}
@@ -133,7 +179,7 @@ export default function(){
                 <Text style={styles.text}>Current WP Power:</Text>
                 <Text style={styles.text}>{currentWPPower}</Text>
 
-                <Text style={styles.text}>||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
+                    <Text style={styles.text}>|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
 
                 <Text style={styles.title}>Histórico de Irrigações: </Text>
                 
@@ -155,7 +201,7 @@ export default function(){
                     <Text style={styles.buttonText}>Ler IrrigationData.txt</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity style={styles.greenButton}
+                <TouchableOpacity style={styles.redButton}
                     onPress={(() => apagar())}
                 >
                     <Text style={styles.buttonText}>Apagar dados IrrigationData.txt</Text>
@@ -173,8 +219,43 @@ export default function(){
                 <Text style={styles.text}>Irrigation data from ESP8266:</Text>
                 <Text style={styles.text}>{irrHist}</Text>
 
+                <Text style={styles.text}>Registro (id data inicio-fim)</Text>
+                <TextInput style={styles.input}
+                    onChangeText={setIrrReg}
+                    value={irrReg}
+                />
 
-                <Text style={styles.text}>||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
+                <TouchableOpacity
+                style={styles.greenButton}
+                onPress={(() => regId())}
+                >
+                    <Text style={styles.buttonText}>Get reg Id</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.text}>Reg Id:</Text>
+                <Text style={styles.text}>{irrRegId}</Text>
+
+                <TouchableOpacity
+                style={styles.greenButton}
+                onPress={(() => regDate())}
+                >
+                    <Text style={styles.buttonText}>Get reg Date</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.text}>Reg Date:</Text>
+                <Text style={styles.text}>{irrRegDate}</Text>
+
+                <TouchableOpacity
+                style={styles.greenButton}
+                onPress={(() => regPeriod())}
+                >
+                    <Text style={styles.buttonText}>Get reg Period</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.text}>Reg Period:</Text>
+                <Text style={styles.text}>{irrRegPeriod}</Text>
+
+                <Text style={styles.text}>|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
 
                 <Text style={styles.title}>Cálculos: </Text>
 
@@ -184,13 +265,27 @@ export default function(){
                     value={time}
                     
                     />
-                <TouchableOpacity style={styles.button}
+                <TouchableOpacity style={styles.orangeButton}
                     onPress={(() => calcPeriodo())}
                 >
                     <Text style={styles.buttonText}>Calcular período</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.text}>||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
+
+                <Text style={styles.text}>Data de Inicio e Fim</Text>
+                <Text style={styles.text}>(ddMMyyyy-ddMMyyyy)</Text>
+                <TextInput style={styles.input}
+                    onChangeText={setStartAndEndDate}
+                    value={startAndEndDate}
+                />
+
+                <TouchableOpacity style={styles.orangeButton}
+                    onPress={(() => getAlldataPeriodTest())}
+                >
+                    <Text style={styles.buttonText}>getAllDataPeriod</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.text}>|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||</Text>
 
             </View>
         </ScrollView>

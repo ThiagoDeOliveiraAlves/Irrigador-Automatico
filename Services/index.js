@@ -74,7 +74,7 @@ export async function criarArquivos(){
 //______________________________________Níveis de umidade - HumidityLevels.txt______________________________________//
 
 //Salva os níveis de umidade mínima e máxima no banco de dados
-export async function salvarNiveisUmidade(min, max) {
+export async function saveHumidityLevels(min, max) {
     try {
         let umidade = min + "-" + max;
 
@@ -96,7 +96,7 @@ export async function salvarNiveisUmidade(min, max) {
         }
     }
     catch (error) {
-        console.log("Erro: em salvarNiveisUmidade -> " + error.message);
+        console.log("Erro: em saveHumidityLevels -> " + error.message);
     }
 }
 
@@ -288,11 +288,8 @@ export async function deleteAllWPData(){
 
 //____________________________________Registro de irrigações - IrrigationData.txt___________________________________//
 
-
-//<------------------------------V--Parcialmentte atualizadas--V------------------------------>\\
-
 //salva o histórico de irrigações no banco de dados
-export async function salvarHistoricoIrrigacao(response) {
+export async function saveIrrigationHistory(response) {
     try {
         if (response.length >= 9) {
 
@@ -301,7 +298,45 @@ export async function salvarHistoricoIrrigacao(response) {
             let fileInfo = await FileSystem.getInfoAsync(irrigationData);
 
             if (fileInfo.exists) {
-                await salvarHistorico(response);
+
+                const arr = response.split(";");
+
+                let content = "";
+                content = await FileSystem.readAsStringAsync(irrigationData);
+                content = content.trim();
+
+                let pos = 0;
+                let data = "";
+
+                let currentWaterPumpId = await getCurrentWPId();
+
+                //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
+                if (arr[pos].charAt(0) == "-") {
+                    //content = content.concat(arr[0] + ";");
+                    data += arr[pos];
+                    pos++;
+                }
+
+                //Para não pular a primeira linha caso o arquivo esteja vazio
+                if(content.length < 1){
+                    //para que uma linha não fique com somente o horário de término caso haja.
+                    data = "";
+
+                    data += currentWaterPumpId + " " + arr[pos];
+                    pos++
+                }
+
+                //adicionando os registros restantes com quebra de linha
+                for (pos; pos < arr.length; pos++) { 
+                    if(arr[pos].length > 16){
+                        data +="\n" + currentWaterPumpId + " " + arr[pos];
+                    }
+                    
+                }
+
+                content += data;
+                //salvando no banco de dados
+                await FileSystem.writeAsStringAsync(irrigationData, content);
             }
         }
         else {
@@ -309,53 +344,11 @@ export async function salvarHistoricoIrrigacao(response) {
         }
     }
     catch (error) {
-        console.log("Erro: em salvarHistoricoIrrigacao -> " + error.message);
+        console.log("Erro: em saveIrrigationHistory -> " + error.message);
     }
 }
 
-//função usada em salvarHistoricoIrrigacao para salvar os dados da irrigação no banco de dados
-export async function salvarHistorico(response) {
-    try {
-        const arr = response.split(";");
-
-        let content = "";
-        content = await FileSystem.readAsStringAsync(irrigationData);
-        content = content.trim();
-
-        let pos = 0;
-        let data = "";
-
-        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
-        let currentWaterPumpId = waterPumpArr[0].substring(1);
-
-        //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
-        if (arr[pos].charAt(0) == "-") {
-            //content = content.concat(arr[0] + ";");
-            data += arr[pos];
-            pos++;
-        }
-
-        //Para não pular a primeira linha caso o arquivo esteja vazio
-        if(content.length < 1 && data.length < 1){
-            data += currentWaterPumpId + " " + arr[pos];
-            pos++
-        }
-
-        //adicionando os registros restantes com quebra de linha
-        for (pos; pos < arr.length; pos++) { 
-            data +="\n" + currentWaterPumpId + " " + arr[pos];
-        }
-
-        content += data;
-        //salvando no banco de dados
-        await FileSystem.writeAsStringAsync(irrigationData, content);
-    }
-    catch (error) {
-        console.log("Erro: em salvarHistorico -> " + error.message);
-    }
-}
-
-//retorna os dados do banco de dados
+//imprime e retorna os registros de irrigações
 export async function getIrrigationData() {
     try{
         await criarArquivos();
@@ -372,76 +365,78 @@ export async function getIrrigationData() {
     } 
 }
 
-//__________________________________________________________________________________________________________________//
-
-//<------------------------------V--Não atualizadas--V------------------------------>\\
-
-
-
-//retorna o último registro do banco de dados
-export async function lerUltimaLinha() {
-    try {
-
-        const content = await lerArquivo();
-        const lines = content.split("\n");
-        let lastLine = lines[lines.length - 1];
-        if (lines.length > 1) {
-            if (lastLine.length < 2) {
-                lastLine = lines[lines.length - 2];
-            }
+//Apaga todos os registros de irrigações
+export async function deleteAllIrrigationData() {
+    try{
+        let fileInfo = await FileSystem.getInfoAsync(irrigationData);
+        if (fileInfo.exists) {
+            await FileSystem.writeAsStringAsync(irrigationData, "");
         }
+    }
+    catch(error){
+        console.log("Erro: em deleteAllIrrigationData -> " + error.message);
+    }
+}
 
-        return lastLine;
-    }
-    catch (error) {
-        console.log("Erro: " + error);
-    }
+//usada para pegar somente o Id de um registro de irrigação
+export function getRegId(register){
+    let aux = register.split(" ");
+    return aux[0];
 }
-//Apaga todos os dados do banco de dados
-export async function apagarDados() {
-    let fileInfo = await FileSystem.getInfoAsync(path);
-    if (fileInfo.exists) {
-        await FileSystem.writeAsStringAsync(path + "/data.txt", "");
-    }
+
+//usada para pegar somente a Data de um registro de irrigação
+export function getRegDate(register){
+    let aux = register.split(" ");
+    return aux[1];
 }
+
+//usada para pegar somente o Periodo de um registro de irrigação
+export function getRegPeriod(register){
+    let aux = register.split(" ");
+    return aux[2];
+}
+
+//__________________________________________________________________________________________________________________//
+//______________________________________________Calculos_____________________________________________//
 
 //Calcula o período de uma irrigação
 export default function calcPeriod(time) {
     try {
-        if (time.length > 17) {
-            time = time.substring(0, 17);
-            console.log("Tirando o ; do tempo: " + time);
-        }
-        const timeArr = time.split("-");
-        const sTime = timeArr[0].split(":");
-        const eTime = timeArr[1].split(":");
-        const startTime = DateTime.fromObject({ hour: sTime[0], minute: sTime[1], second: sTime[2] });
-        const endTime = DateTime.fromObject({ hour: eTime[0], minute: eTime[1], second: eTime[2] });
-        const period = endTime.diff(startTime, ['second']);
+        if(time.length < 17){
+            const timeArr = time.split("-");
+            const sTime = timeArr[0].split(":");
+            const eTime = timeArr[1].split(":");
+            const startTime = DateTime.fromObject({ hour: sTime[0], minute: sTime[1], second: sTime[2] });
+            const endTime = DateTime.fromObject({ hour: eTime[0], minute: eTime[1], second: eTime[2] });
+            const period = endTime.diff(startTime, ['second']);
 
-
-        if (period.seconds < 0) {
-            let aux = 86400 + period.seconds;
-            return aux;
+            if (period.seconds < 0) {
+                let aux = 86400 + period.seconds;
+                return aux;
+            }
+            return (period.seconds);
         }
-        return (period.seconds);
+        else{
+            throw new Error("O período fornecido é inválido");
+        }
     }
     catch (error) {
-        console.log("Erro em calcPeriod: " + error.message)
+        console.log("Erro: em calcPeriod -> " + error.message);
     }
 }
 
 //Retorna todos os registros de irrigações baseado no período especificado
 export async function getAllDataPeriod(startDate, endDate) {
+    const arr = [];
     try {
         console.log("--Função getAllDataPeriod--");
-        let content = await lerArquivo();
+        let content = await getIrrigationData();
         content = content.trim();
         const lines = content.split("\n");
         let lineStart = -1;
         let lineEnd = -1;
         const len = lines.length;
-        const arr = [];
+        //const arr = [];
         //usaremos para verificar se a data de início e de término especificada  foram encontradas
         let foundSDate = false;
         let foundEDate = false;
@@ -452,100 +447,94 @@ export async function getAllDataPeriod(startDate, endDate) {
             throw new Error("A data de início deve ser inferior ou igual a data de término");
         }
 
-        if (startDate != endDate) {
-            for (let i = 0; i < len; i++) {
-                const lineDate = lines[i].substring(0, 8);
-                const thisDate = DateTime.fromFormat(lineDate, "ddMMyyyy");
+        for (let i = 0; i < len; i++) {
+            const lineDate = getRegDate(lines[i]);
+            const thisDate = DateTime.fromFormat(lineDate, "ddMMyyyy");
 
-                if (lineDate == startDate) {
-                    foundSDate = true;
-                    lineStart = i;
-                }
-
-                //caso a data inicial especificada não seja encontrada
-                if (!foundSDate && thisDate > formatedSDate) {
-                    foundSDate = true;
-                    lineStart = i
-                }
-
-                if (lineDate == endDate) {
-                    foundEDate = true;
-                    lineEnd = i;
-                }
-                //caso a data final especificada não seja encontrada
-                if (!foundEDate && thisDate > formatedEDate) {
-                    //entao pegaremos a linha anterior, pois é menor que a data final
-                    if (i > 0) {
-                        lineEnd = i - 1;
-                        foundEDate = true;
-                    }
-                }
-                //caso estivermos no fim do arquivo e a condição acima não foi verdadeira
-                else if (foundEDate == false && i + 1 == len) {
-                    lineEnd = i;
-                    foundEDate = true;
-                }
-                if (foundSDate && foundEDate) {
-                    break;
-                }
+            if (lineDate == startDate && foundSDate == false) {
+                foundSDate = true;
+                lineStart = i;
             }
+
+            //caso a data inicial especificada não seja encontrada
+            if (!foundSDate && thisDate > formatedSDate) {
+                foundSDate = true;
+                lineStart = i
+            }
+
+            /*<------Identifica a posição do último registro que possui a mesma data de término 
+            (existem mais de um registro com a mesma data, é necessário pegar o último)---------*/
+            if (lineDate == endDate)  {
+                lineEnd = i;
+            }
+
+            //{CONDICAO A}
+            //se verdadeiro, significa que encontramos o ULTIMO registro com a mesma data de termino
+            if(lineEnd != -1 && thisDate > formatedEDate){
+                foundEDate = true
+            }
+            //-----------------------------------------------------------------------------------/>
+
+            //caso a data final especificada não seja encontrada
+            if (!foundEDate && thisDate > formatedEDate) {
+                //entao pegaremos a linha anterior, pois é menor que a data final
+                if (i > 0) {
+                    lineEnd = i - 1;
+                    foundEDate = true;
+                }
+                else{
+                    throw new Error("Não existem registros dentro do período informado");
+                }
+                    
+            }
+
+            //caso estivermos no fim do arquivo e foundEDate ainda ser falso
+            else if (foundEDate == false && i + 1 == len) {
+                /*significa que a data final já foi encontrada, 
+                porém por estar no fim do arquivo, a {CONDICAO A} não foi executada*/
+                if(lineEnd != -1){
+                    foundEdate = true;
+                }
+                //significa que o último registro do banco possui data inferior a data de termino especificada
+                else{
+                    lineEnd = i;
+                    foundEDate = true;
+                }
+                    
+            }
+            if (foundSDate && foundEDate) {
+                break;
+            }
+        }
+            
+        //As condicoes a seguir servem para verificar se existem registros dentro do periodo especificado.
+        let lineDate = getRegDate(lines[lineEnd]);
+        let thisDate = DateTime.fromFormat(lineDate, "ddMMyyyy");
+            
+        if(thisDate > formatedEDate || lineStart == -1 || lineStart > lineEnd){
+            throw new Error("Não existem registros dentro do período informado");
+        }
+        
+        if (lineStart == lineEnd) {
+            arr.push(lines[lineStart]);
         }
         else {
-            for (let i = 0; i < len; i++) {
-                const lineDate = lines[i].substring(0, 8);
-                const thisDate = DateTime.fromFormat(lineDate, "ddMMyyyy");
-
-                if (lines[i].substring(0, 8) == startDate) {
-                    foundDate = true;
-                    lineStart = i;
-                    lineEnd = i;
-                    break;
-                }
-
-                //caso a data inicial especificada não seja encontrada
-                if (!foundSDate && thisDate > formatedSDate) {
-                    foundSDate = true;
-                    lineStart = i
-                    lineEnd = i;
-                    break;
-                }
-            }
-        }
-
-        if (lineStart != -1 && lineEnd != -1) {
-            if (lineStart == lineEnd) {
+            for (lineStart; lineStart <= lineEnd; lineStart++) {
                 arr.push(lines[lineStart]);
             }
-            else {
-                for (lineStart; lineStart <= lineEnd; lineStart++) {
-                    arr.push(lines[lineStart]);
-                }
-            }
-
-            return arr;
         }
+    
+        return arr;
     }
     catch (error) {
-        console.log("Erro em getAllDataPeriod: " + error.message);
-    }
+        console.error("Erro: em getAllDataPeriod -> " + error.message);
+        console.log("Teste dentro do catch");
+        console.log(arr.length);
+        return arr; 
+    }  
 }
 
-//possível função útil
-export function dashboardFormat(arr) {
-    const len = arr.length;
-    if (len == 1) {
-        return "day";
-    }
-    if (len < 28) {
-        return "days"
-    }
-    else if (len >= 28 && len < 56) {
-        return "weeks"
-    }
-    else if (len >= 56) {
-        return "months"
-    }
-}
+//<------------------------------V--Não atualizadas--V------------------------------>\\
 
 
 //irá retornar um vetor com os períodos que a bomba de água ficou ligada
@@ -641,7 +630,7 @@ export function dashboardIrrigationPeriod(arr, format) {
         }
     }
     catch (error) {
-        console.log("Erro em dashboardIrrigationPeriod: " + error.message);
+        console.error("Erro: em dashboardIrrigationPeriod -> " + error.message);
     }
 }
 
@@ -652,16 +641,26 @@ export function dashboardIrrigationDate(arr, format) {
         if (format == "daily") {
             //obs: tem que ver se o vetor não possui posições vazias
             //nesse caso, teremos que armazenar os horários ao invés das datas
-            const dateArr = arr[0].split(";");
-            dateArr[0] = dateArr[0].substring(9);
-
+            let timeArr = [];
+            for(let item of arr){
+                
+                if(item.length > 1){
+                    timeArr.push(item.substring());
+                }
+                const dateArr = arr[0].split(";");
+                dateArr[0] = dateArr[0].substring(11);
+                console.log("Teste 1: format = daily");
+                console.log("Horários " + dateArr);
+            
+            }
+            
             return dateArr;
         }
         else if (format == "days") {
             let dateArr = []
             for (let i = 0; i < len; i++) {
                 //pegando a data
-                let date = arr[i].substring(0, 8);
+                let date = arr[i].substring(2, 10);
                 let aux = DateTime.fromFormat(date, "ddMMyyyy");
                 let aux1 = aux.toFormat("dd/MM/yyyy");
                 dateArr.push(aux1);
@@ -728,7 +727,7 @@ export function dashboardIrrigationDate(arr, format) {
         }
     }
     catch (error) {
-        console.log("Erro em dashboardIrrigationDate: " + error.message);
+        console.error("Erro em dashboardIrrigationDate: " + error.message);
     }
 }
 
@@ -765,7 +764,7 @@ export async function calcWaterLiters(arr) {
         return litrosAgua;
     }
     catch (error) {
-        console.log("Erro em calcWaterLiters: " + error.message);
+        console.error("Erro: em calcWaterLiters -> " + error.message);
     }
 }
 
@@ -789,6 +788,6 @@ export async function calcKWH(arr){
 
     }
     catch(error){
-        console.log("Ero em calcKWH: " + error.mesage);
+        console.error("Ero: em calcKWH -> " + error.mesage);
     }
 }

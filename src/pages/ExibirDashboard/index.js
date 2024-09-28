@@ -116,6 +116,8 @@ export default function Dashboard() {
         for (let i = 0; i < arr.length; i++) {
             console.log(i + " " + arr[i]);
         }
+
+        /*
         //ATENÇÃO: A FUNÇÃO dashboardIrrigationDate DEVE SER EXECUTADA SEMPRE ANTES DA dashboardIrrigationPeriod, POIS ESSA ÚLTIMA MODIFICA O VETOR arr
         const dateArr = dashboardIrrigationDate(arr, format);
         const periodArr = dashboardIrrigationPeriod(arr, format);
@@ -128,6 +130,7 @@ export default function Dashboard() {
         setLitrosAgua(litrosDeAgua);
         setDate(dateArr);
         setKwh(kwhArr);
+        */
     }
 
     const formatDate = (date) => {

@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     },
     text:{
         marginTop: 20,
-        fontSize: 18,
+        fontSize: 20,
         color: "white",
     },
     input:{
@@ -45,6 +45,12 @@ const styles = StyleSheet.create({
     redButton:{
         marginTop: 20,
         backgroundColor: "darkred",
+        borderRadius: 20,
+        zIndex: 2,
+    },
+    orangeButton:{
+        marginTop: 20,
+        backgroundColor: "darkorange",
         borderRadius: 20,
         zIndex: 2,
     },
