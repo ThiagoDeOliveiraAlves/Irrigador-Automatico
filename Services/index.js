@@ -126,9 +126,9 @@ export async function getHumidityLevels(){
 //_________________________________________Bomba de água - WaterPumpData.txt________________________________________//
 
 //Salva a vazão e a potência da bomba d'água no banco de dados
-export async function setWaterPumpData(vazao, potencia) {
+export async function setWaterPumpData(flowRate, power) {
     try {
-        let dados = vazao + "," + potencia;
+        let dados = flowRate + "," + power;
 
         //cria o diretório e os arquivos caso não existam
         await criarArquivos();
@@ -273,6 +273,54 @@ export async function getCurrentWPPower(){
     }
 }
 
+//retorna a vazao da bomba de água que possui o Id especificado
+export async function getWPFlowRateById(id){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let lines = waterPumpArr.split("\n");
+        let flowRate = 0;
+
+        for(let i = 0; i< lines.length; i++){  
+            let lineData = lines[i].split(",");
+            if(id == lineData[0]){
+                flowRate = lineData[1];
+                return flowRate;
+            }
+        }
+        console.log("O id especificado não existe");
+        return flowRate;
+    }
+    catch(error){
+        console.log("Erro: em getWPFlowRateById -> " + error.mesage);
+    }
+}
+
+//retorna a potência da bomba de água que possui o Id especificado
+export async function getWPPowerById(id){
+    try{
+        criarArquivos();
+
+        let waterPumpArr = await FileSystem.readAsStringAsync(waterPumpData);
+        let lines = waterPumpArr.split("\n");
+        let power = 0;
+
+        for(let i = 0; i< lines.length; i++){  
+            let lineData = lines[i].split(",");
+            if(id == lineData[0]){
+                power = lineData[2];
+                return power;
+            }
+        }
+        console.log("O id especificado não existe");
+        return flowRate;
+    }
+    catch(error){
+        console.log("Erro: em getWPPowerById -> " + error.mesage);
+    }
+}
+
 //apaga os dados do arquivo WaterPumpData.txt
 export async function deleteAllWPData(){
     try{
@@ -354,7 +402,7 @@ export async function getIrrigationData() {
         await criarArquivos();
 
         const content = await FileSystem.readAsStringAsync(irrigationData);
-        console.log("---Imprimindo o HumidityLevels.txt---");
+        console.log("---Imprimindo IrrigationData.txt---");
         console.log(content);
         console.log("-------------------------------------");
         
@@ -400,9 +448,9 @@ export function getRegPeriod(register){
 //______________________________________________Calculos_____________________________________________//
 
 //Calcula o período de uma irrigação
-export default function calcPeriod(time) {
+export function calcPeriod(time) {
     try {
-        if(time.length < 17){
+        if(time.length > 9){
             const timeArr = time.split("-");
             const sTime = timeArr[0].split(":");
             const eTime = timeArr[1].split(":");
@@ -426,9 +474,13 @@ export default function calcPeriod(time) {
 }
 
 //Retorna todos os registros de irrigações baseado no período especificado
-export async function getAllDataPeriod(startDate, endDate) {
-    const arr = [];
+export async function getAllDataPeriod(startDate, endDate, format) {
     try {
+        const arr = [];
+        if(format == "daily"){
+            endDate = startDate;
+        }
+
         console.log("--Função getAllDataPeriod--");
         let content = await getIrrigationData();
         content = content.trim();
@@ -528,149 +580,121 @@ export async function getAllDataPeriod(startDate, endDate) {
     }
     catch (error) {
         console.error("Erro: em getAllDataPeriod -> " + error.message);
-        console.log("Teste dentro do catch");
-        console.log(arr.length);
-        return arr; 
+        let arr = [];
+        return arr;
     }  
 }
 
-//<------------------------------V--Não atualizadas--V------------------------------>\\
-
-
-//irá retornar um vetor com os períodos que a bomba de água ficou ligada
+//irá retornar um vetor com os dados das irrigações (com ececao dos horarios) e os períodos que a bomba de água ficou ligada
 export function dashboardIrrigationPeriod(arr, format) {
     try {
-        const len = arr.length;
         const periodArr = [];
+        const len = arr.length;
+        let wPId = 0;
         let period = 0;
-        if (format == "daily") {
-            //obs: tem que ver se o vetor não possui posições vazias
-            /*Aqui na verdade vamos ter que guardar os períodos em posições diferentes, no caso, iremos mostrar um 
-            gráfico do dia com todas as irrigações feitas no dia, nesse caso, também teremos que fazer com que a função
-            dashboardIrrigationDate armazene os horários ao invés da data*/
-            arr[0] = arr[0].substring(9);
-            const aux2 = arr[0].split(";");
-            for (let i = 0; i < aux2.length; i++) {
-                if (aux2[i] != "") {
-                    period = calcPeriod(aux2[i]);
-                    console.log(i + "- Periodo: " + period);
-                    periodArr.push(period);
-                    period = 0;
-                }
-            }
-            return periodArr;
-        }
-        else if (format == "days") {
+
+        if (format == "weeks") {
             for (let i = 0; i < len; i++) {
-                //retirando a data
-                arr[i] = arr[i].substring(9);
+                let thisDate = DateTime.fromFormat(getRegDate(arr[i]), "ddMMyyyy");
 
-                const aux2 = arr[i].split(";");
-                for (let j = 0; j < aux2.length; j++) {
-                    if (aux2[j] != "") {
-                        period += calcPeriod(aux2[j]);
-                    }
-                }
-                periodArr.push(period);
-                period = 0;
-            }
-            return periodArr;
-        }
-        else if (format == "weeks") {
-            let date = DateTime.fromFormat(arr[0].substring(0, 8), "ddMMyyyy");
+                const week = thisDate.weekNumber;
+                const year = thisDate.weekYear;
+                const wPId = getRegId(arr[i]);
+                period = getRegPeriod(arr[i]);
+                period = calcPeriod(period);
+                 
+                let dataPeriod = wPId + " " + week + year + " " + period;
 
-            for (let i = 0; i < len; i++) {
-                let thisDate = DateTime.fromFormat(arr[i].substring(0, 8), "ddMMyyyy");
-
-                const week1 = date.weekNumber;
-                const week2 = thisDate.weekNumber;
-
-                const year1 = date.weekYear;
-                const year2 = thisDate.weekYear;
-
-                let dateAux = arr[i].substring(0, 8);
-
-                arr[i] = arr[i].substring(9);
-                //verifica se essas datas pertencem a mesma semana
-                if (week1 == week2 && year1 == year2) {
-                    const aux2 = arr[i].split(";");
-                    for (let j = 0; j < aux2.length; j++) {
-                        if (aux2[j] != "") {
-                            period += calcPeriod(aux2[j]);
-                        }
-                    }
-                    //para comparar com a próxima data
-                    if (arr[i].length != "") {
-                        date = DateTime.fromFormat(dateAux, "ddMMyyyy");
-                    }
-                }
-                else {
-                    if (arr[i].length != "") {
-                        date = DateTime.fromFormat(dateAux, "ddMMyyyy");
-                    }
-                    periodArr.push(period);
-                    period = 0;
-                    const aux2 = arr[i].split(";");
-                    for (let j = 0; j < aux2.length; j++) {
-                        if (aux2[j] != "") {
-                            period += calcPeriod(aux2[j]);
-                        }
-                    }
-
-                }
-                //garante que ao chegarmos no último registro, o período seja atribuido caso não havia sido.
-                if (i == len - 1 && period != 0) {
-                    periodArr.push(period);
-                }
+                periodArr.push(dataPeriod);
             }
             return periodArr;
         }
         else if (format == "months") {
+            for (let i = 0; i < len; i++) {
+                let thisDate = DateTime.fromFormat(getRegDate(arr[i]), "ddMMyyyy");
 
+                const month = thisDate.month;
+                const year = thisDate.year;
+                const wPId = getRegId(arr[i]);
+                period = getRegPeriod(arr[i]);
+                period = calcPeriod(period);
+                 
+                let dataPeriod = wPId + " " + month + "/" + year + " " + period;
+                periodArr.push(dataPeriod);
+            }
+            return periodArr;
+        }
+        else{
+            for (let i = 0; i < len; i++) {
+                if(arr[i] != ""){
+                    wPId = getRegId(arr[i]);
+                    let thisDate = getRegDate(arr[i]);
+                    period = getRegPeriod(arr[i]);
+                    period = calcPeriod(period);
+                    let dataPeriod = wPId + " " + thisDate + " " + period;
+                    periodArr.push(dataPeriod);
+                }
+            }
+            return periodArr;  
         }
     }
     catch (error) {
         console.error("Erro: em dashboardIrrigationPeriod -> " + error.message);
+        let arr = [];
+        return arr;
     }
 }
 
+//retorna um vetor com as datas de acordo com o formato solicitado
 export function dashboardIrrigationDate(arr, format) {
     try {
         const len = arr.length;
 
         if (format == "daily") {
-            //obs: tem que ver se o vetor não possui posições vazias
+            //obs: tem que ver se o vetor não possui posições vazias.
             //nesse caso, teremos que armazenar os horários ao invés das datas
             let timeArr = [];
+            let period = 0;
             for(let item of arr){
-                
-                if(item.length > 1){
-                    timeArr.push(item.substring());
+               if(item.length != 0){
+                let period = getRegPeriod(item);
+                    timeArr.push(period);
                 }
-                const dateArr = arr[0].split(";");
-                dateArr[0] = dateArr[0].substring(11);
-                console.log("Teste 1: format = daily");
-                console.log("Horários " + dateArr);
-            
             }
             
-            return dateArr;
+            return timeArr;
         }
         else if (format == "days") {
-            let dateArr = []
+
+            console.log("Format: days");
+            console.log("Datas (dateArr): ");
+
+            let dateArr = [];
+            let previousPos = 0;
+
             for (let i = 0; i < len; i++) {
                 //pegando a data
-                let date = arr[i].substring(2, 10);
+                let date = getRegDate(arr[i]);
                 let aux = DateTime.fromFormat(date, "ddMMyyyy");
-                let aux1 = aux.toFormat("dd/MM/yyyy");
-                dateArr.push(aux1);
+                let formatedDate = aux.toFormat("dd/MM/yyyy");
+                if(i > 0){
+                    //verificando se a data atual é diferente da data anterior
+                    if(formatedDate != dateArr[previousPos]){
+                       dateArr.push(formatedDate); 
+                       previousPos++;
+                    }      
+                }
+                else{
+                    dateArr.push(formatedDate);
+                }     
             }
+
             return dateArr;
         }
         else if (format == "weeks") {
             let dateArr = [];
             let lastDate = 0;
-            let firstDate = arr[0].substring(0, 8);
+            let firstDate = getRegDate(arr[0]);
             let date = DateTime.fromFormat(firstDate, "ddMMyyyy");
 
             let week1 = date.weekNumber;
@@ -684,16 +708,15 @@ export function dashboardIrrigationDate(arr, format) {
             dateArr.push(aux3);
 
             for (let i = 0; i < len; i++) {
+                let dateAux = getRegDate(arr[i]);
 
-                let thisDate = DateTime.fromFormat(arr[i].substring(0, 8), "ddMMyyyy");
+                let thisDate = DateTime.fromFormat(dateAux, "ddMMyyyy");
 
                 week1 = date.weekNumber;
                 const week2 = thisDate.weekNumber;
 
                 year1 = date.weekYear;
                 const year2 = thisDate.weekYear;
-
-                let dateAux = arr[i].substring(0, 8);
 
                 //verifica se essas datas pertencem a mesma semana e mesmo ano
                 if (week1 == week2 && year1 == year2) {
@@ -709,12 +732,13 @@ export function dashboardIrrigationDate(arr, format) {
                     }
                 }
                 if (arr[i].length > "") {
-                    lastDate = arr[i].substring(0, 8);
-                }
+                    lastDate = getRegDate(arr[i]);
+                }  
             }
             //substituindo a data referente ao fim da semana pela data da última irrigação feita no sistema (dentro do período que o usuário informou)
             let dateArrLength = dateArr.length;
             aux3 = dateArr[dateArrLength - 1];
+            //console.log("Imprimindo o aux3: " + aux3);
             aux3 = aux3.substring(0, 11);
             let aux4 = DateTime.fromFormat(lastDate, "ddMMyyyy")
             aux3 = aux3 + aux4.toFormat("dd/MM/yyyy");
@@ -723,11 +747,42 @@ export function dashboardIrrigationDate(arr, format) {
             return dateArr;
         }
         else if (format == "months") {
+            let monthYearArr = [];
+            let firstDate = getRegDate(arr[0]);
+            firstDate = DateTime.fromFormat(firstDate, "ddMMyyyy");
+            let previousMonth = firstDate.month;
+            if(previousMonth < 10){
+                previousMonth = "0" + previousMonth;
+            }
+            let previousYear = firstDate.year;
+            let previousMonthYear = previousMonth + "/" + previousYear;
+            
+            monthYearArr.push(previousMonthYear);
 
+            for(let i = 1; i < arr.length; i++){
+                if(arr[i] != ""){
+                    let thisDate = getRegDate(arr[i]);
+                    thisDate = DateTime.fromFormat(thisDate, "ddMMyyyy");
+                    let thisMonth = thisDate.month;
+                    if(thisMonth < 10){
+                        thisMonth = "0" + thisMonth;
+                    }
+                    let thisYear = thisDate.year;
+                    let thisMonthYear = thisMonth + "/" + thisYear;
+
+                    if(thisMonthYear != previousMonthYear){
+                        previousMonthYear = thisMonthYear;
+                        monthYearArr.push(thisMonthYear);
+                    }
+                }
+            }
+            return monthYearArr;
         }
     }
     catch (error) {
         console.error("Erro em dashboardIrrigationDate: " + error.message);
+        let arr = [];
+        return arr;
     }
 }
 
@@ -744,50 +799,135 @@ export function getStartAndEndOfWeek(weekNumber, year) {
 }
 
 //retorna um vetor com a quantidade de litros de água usada
-export async function calcWaterLiters(arr) {
-    /*O valor da vazão é especificado em litros por hora. Transformamos o periodo de segundos para horas e calculamos a quantidade de água bombeada*/
+export async function calcWaterLiters(arr, format) {
+    /*O valor da vazão é especificado em litros por hora. Transformamos o periodo de segundos para horas e calculamos a quantidade de água bombeada*/  
     try {
-        let dadosBomba = await getDadosBomba();
-        let dadosBombaArr = dadosBomba.split("-");
-        let vazao = parseFloat(dadosBombaArr[0]);
-        let litrosAgua = [];
-        let aux = 0;
+        let waterLitersArr = [];
 
-        for (let i = 0; i < arr.length; i++) {
-            if(arr[i] != ""){
-                aux = (parseFloat(arr[i]) / 3600) * vazao;
-                aux = parseFloat(aux.toFixed(4));
-                litrosAgua.push(aux);
-                console.log(litrosAgua[i]);
+        if(format == "daily"){
+            for(let i = 0; i < arr.length; i++){
+                if(arr[i] != ""){
+                    let period = getRegPeriod(arr[i]);
+                    let wpId = getRegId(arr[i]);
+                    let wpFlowRate = await getWPFlowRateById(wpId);
+
+                    let waterLiters = (parseFloat(period) / 3600) * parseFloat(wpFlowRate);
+                    waterLiters = parseFloat(waterLiters.toFixed(4));
+
+                    waterLitersArr.push(waterLiters);
+                }
             }
         }
-        return litrosAgua;
+        else{
+            let previousDate = getRegDate(arr[0]);
+            let previousWLArrId = 0
+            for(let i = 0; i < arr.length; i++){
+                if(arr[i] != ""){
+                    let thisDate = getRegDate(arr[i]);
+                    let wpId = getRegId(arr[i]);
+                    let period = getRegPeriod(arr[i]);
+                    let waterLiters = 0;
+                    
+
+                    let wpFlowRate = await getWPFlowRateById(wpId);
+                    console.log("wpFlowRate = " + wpFlowRate);
+
+                    if(thisDate == previousDate){          
+                        waterLiters = (parseFloat(period) / 3600) * parseFloat(wpFlowRate);
+                        if(waterLitersArr.length > 0){
+                            waterLiters += parseFloat(waterLitersArr[previousWLArrId]);
+                            waterLitersArr[previousWLArrId] = waterLiters;
+                        }
+                        else{
+                            waterLitersArr.push(waterLiters);
+                        }
+
+                    }
+                    else{
+                        previousDate = thisDate;
+                        previousWLArrId++;
+                        waterLiters = (parseFloat(period) / 3600) * parseFloat(wpFlowRate);
+                        waterLitersArr.push(waterLiters);
+                    }
+                }
+            }
+        }
+
+        return waterLitersArr;
+
     }
     catch (error) {
         console.error("Erro: em calcWaterLiters -> " + error.message);
+        let arr = [];
+        return arr;
     }
 }
 
-export async function calcKWH(arr){
+//retorna um vetor com o valor de KWH usado
+export async function calcKWH(arr, format){
     try {
-        let dadosBomba = await getDadosBomba();
-        let dadosBombaArr = dadosBomba.split("-");
-        let potencia = parseFloat(dadosBombaArr[1]);
-        let kwh = [];
-        let aux = 0;
-        for (let i = 0; i < arr.length; i++) {
-            if(arr[i] != ""){
-                //transformação da W para KW (potencia/1000)
-                aux = (parseFloat(arr[i]) / 3600) * potencia/1000;
-                aux = parseFloat(aux.toFixed(4));
-                kwh.push(aux);
-                console.log(kwh[i]);
+        let kwhArr = [];
+        let previousDate = getRegDate(arr[0]);
+        let previousKwhArrId = 0
+
+        if(format == "daily"){
+            for(let i = 0; i < arr.length; i++){
+                if(arr[i] != ""){
+                    let wpId = getRegId(arr[i]);
+                    let period = getRegPeriod(arr[i]);
+                    let kwh = 0;
+
+                    let wpPower = await getWPPowerById(wpId);
+                    //transformando W em KWH
+                    wpPower = parseFloat(wpPower)/1000;
+
+                    kwh = (parseFloat(period) / 3600) * parseFloat(wpPower);
+                    kwh = parseFloat(kwh.toFixed(8));
+                    //kwh = parseFloat(kwh);
+
+                    kwhArr.push(kwh);
+                }
             }
         }
-        return kwh;
+        else{
+            for(let i = 0; i < arr.length; i++){
+                if(arr[i] != ""){
+                    let thisDate = getRegDate(arr[i]);
+                    let wpId = getRegId(arr[i]);
+                    let period = getRegPeriod(arr[i]);
+                    let kwh = 0;     
 
+                    let wpPower = await getWPPowerById(wpId);
+                    //transformando W em KWH
+                    wpPower = parseFloat(wpPower)/1000;
+                    
+
+                    if(thisDate == previousDate){          
+                        kwh = (parseFloat(period) / 3600) * parseFloat(wpPower);
+
+                        if(kwhArr.length > 0){
+                            kwh += parseFloat(kwhArr[previousKwhArrId]);
+                            kwhArr[previousKwhArrId] = kwh;
+
+                        }
+                        else{
+                            kwhArr.push(kwh);
+                        }
+                    }
+                    else{
+                        previousDate = thisDate;
+                        previousKwhArrId++;
+                        kwh = (parseFloat(period) / 3600) * parseFloat(wpPower);
+                        kwhArr.push(kwh);
+                    }
+                }
+            }
+        }
+        return kwhArr;
     }
     catch(error){
         console.error("Ero: em calcKWH -> " + error.mesage);
+        let arr = [];
+        return arr;
     }
 }

@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import { gerarGrafico, getAllDataPeriod, dashboardIrrigationPeriod, dashboardIrrigationDate, calcWaterLiters, calcKWH } from "../../../Services";
+import { getAllDataPeriod, dashboardIrrigationPeriod, dashboardIrrigationDate, calcWaterLiters, calcKWH } from "../../../Services";
 import styles from "./style";
 import { CartesianChart, Line, useChartPressState } from "victory-native";
-import Animated, { useAnimatedProps, SharedValue } from "react-native-reanimated";
+import Animated, { useAnimatedProps } from "react-native-reanimated";
 import { useFont } from "@shopify/react-native-skia";
 
 export default function Dashboard() {
@@ -13,6 +13,7 @@ export default function Dashboard() {
     const [endDate, setEndDate] = React.useState(0);
     const [format, setFormat] = React.useState("daily");
     const [editable, setEditable] = React.useState(true);
+    const [alertMessage, setAlertMessage] = React.useState("");
 
     const [litrosAgua, setLitrosAgua] = React.useState([]);
     const [Kwh, setKwh] = React.useState([]);
@@ -37,9 +38,8 @@ export default function Dashboard() {
     const { state: state2, isActive: isActive2 } = useChartPressState({ x: 0, y: { kwh: 0 } });
 
     const animatedLitrosAguaText = useAnimatedProps(() => {
-        console.log("Chamou");
         return {
-            text: `${state.y.litros.value.value.toFixed(2)}L`,
+            text: `${state.y.litros.value.value.toFixed(4)}L`,
             defaultValue: "",
         }
     })
@@ -58,9 +58,8 @@ export default function Dashboard() {
     })
     
     const animatedKwhText = useAnimatedProps(() => {
-        console.log("Chamou2");
         return {
-            text: state2 && state2.y && state2.y.kwh && state2.y.kwh.value ? `${state2.y.kwh.value.value}Kw` : "",
+            text: state2 && state2.y && state2.y.kwh && state2.y.kwh.value ? `${state2.y.kwh.value.value.toFixed(8)}KWH` : "",
             defaultValue: "",
         }
     })
@@ -101,36 +100,54 @@ export default function Dashboard() {
     }
     //Gerar gráficos
     const genDashboard = async () => {
-        console.log("---------------------------");
-        console.log("format: " + format);
-        if(format == "daily"){
-            setEndDate(startDate);
-        }
-        const sDate = startDate.replaceAll("/", "");
-        const eDate = endDate.replaceAll("/", "");
-        
-        console.log(sDate);
-        console.log(eDate);
-        const arr = await getAllDataPeriod(sDate, eDate);
-        console.log("Teste do getAllDataPeriod");
-        for (let i = 0; i < arr.length; i++) {
-            console.log(i + " " + arr[i]);
-        }
+        try{
+            setAlertMessage("");
+            if(startDate != ""){
+                console.log("---------------------------");
+                console.log("format: " + format);
+                if(format == "daily"){
+                    setEndDate(startDate);
+                }
+                let sDate = startDate.replaceAll("/", "");
+                let eDate = "";
+                if(endDate != ""){
+                    eDate = endDate.replaceAll("/", "");
+                }
+                
+                console.log(sDate);
+                console.log(eDate);
+                
+                const arr = await getAllDataPeriod(sDate, eDate, format);
 
-        /*
-        //ATENÇÃO: A FUNÇÃO dashboardIrrigationDate DEVE SER EXECUTADA SEMPRE ANTES DA dashboardIrrigationPeriod, POIS ESSA ÚLTIMA MODIFICA O VETOR arr
-        const dateArr = dashboardIrrigationDate(arr, format);
-        const periodArr = dashboardIrrigationPeriod(arr, format);
-        const litrosDeAgua = await calcWaterLiters(periodArr); 
-        const kwhArr = await calcKWH(periodArr);
-        dateArr.push("-");
-        litrosAgua.push("-");
-        kwhArr.push("-");
+                if(arr.length == 0){
+                    setAlertMessage("Não existem registros dentro do periódo especificado");
+                }
+                else{
+                    const periodArr = dashboardIrrigationPeriod(arr, format);
 
-        setLitrosAgua(litrosDeAgua);
-        setDate(dateArr);
-        setKwh(kwhArr);
-        */
+                    
+                    const dateArr = dashboardIrrigationDate(arr, format);
+
+                    const litrosDeAgua = await calcWaterLiters(periodArr, format); 
+
+                    const kwhArr = await calcKWH(periodArr, format);
+                    
+                    dateArr.push("-");
+                    litrosAgua.push("-");
+                    kwhArr.push("-");
+
+                    setLitrosAgua(litrosDeAgua);
+                    setDate(dateArr);
+                    setKwh(kwhArr);
+                }     
+            }
+            else{
+                setAlertMessage("Informe ao menos a data de início");
+            }
+        }
+        catch(error){
+            console.error("Erro: em genDashboard -> " + error.message);
+        }
     }
 
     const formatDate = (date) => {
@@ -154,12 +171,11 @@ export default function Dashboard() {
         return minWidth + (data.length * additionalWidthPerData);
     };
 
-    //serve para definir o valor tockcount dos gráficos
+    //serve para definir o valor tickcount dos gráficos
     const calculateTickCountX = () => {
-        console.log("TickCount: " + data.length);
+        //console.log("TickCount: " + data.length);
         return data.length - 1;
     }
-
 
     //teste
     const DATA = Array.from({ length: 31 }, (_, i) => ({
@@ -204,6 +220,7 @@ export default function Dashboard() {
                             <Picker.Item label="diário" value="daily" />
                             <Picker.Item label="dias" value="days" />
                             <Picker.Item label="semanas" value="weeks" />
+                            <Picker.Item label="meses" value="months" />
                         </Picker>
                     </View>
                     <TouchableOpacity style={styles.button}
@@ -212,6 +229,8 @@ export default function Dashboard() {
                         <Text style={styles.buttonText}>Gerar gráfico</Text>
                     </TouchableOpacity>
                 </View>
+
+                <Text style={styles.alertMessage}>{alertMessage}</Text>
             </View>
                 <View style={styles.viewPoints}>
                     {isActive && (

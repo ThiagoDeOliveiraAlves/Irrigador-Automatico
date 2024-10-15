@@ -63,6 +63,13 @@ const styles = StyleSheet.create({
         fontSize: 20,
         color: "white",
     },
+    alertMessage:{
+        marginTop: 10,
+        marginLeft: 10,
+        marginRight: 10,
+        fontSize: 20,
+        color: "darkred",
+    },
     periodText:{
         marginTop: 10,
         marginRight: 10,
