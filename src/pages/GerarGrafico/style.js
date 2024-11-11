@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         marginRight: 10,
         fontSize: 20,
-        color: "darkred",
+        color: "red",
     },
     periodText:{
         marginTop: 10,

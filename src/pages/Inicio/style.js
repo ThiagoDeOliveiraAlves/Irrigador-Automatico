@@ -13,6 +13,23 @@ const styles = StyleSheet.create({
         color: "#00A038",
     },
 
+    greenText:{
+        marginTop: 20,
+        fontSize: 18,
+        color: "lightgreen",
+    },
+    redText:{
+        marginTop: 20,
+        fontSize: 18,
+        color: "red",
+    },
+
+    errorMessage:{
+        marginTop: 20,
+        fontSize: 18,
+        color: "red",
+    },
+
     umidadeMedia:{
         marginTop: 20,
         fontSize: 75,

@@ -8,6 +8,8 @@ import { saveHumidityLevels, getHumidityLevels } from "../../../Services";
 export default function DefinirUmidade() {
     const [umidadeOn, setUmidadeOn] = React.useState(null);
     const [umidadeOff, setUmidadeOff] = React.useState(null);
+    const [wasRequested, setWasRequested] = React.useState(false);
+    const [isSucceeded, setIsSucceeded] = React.useState(null);
 
     const getData = async () => {
         let data = await getHumidityLevels();
@@ -17,10 +19,25 @@ export default function DefinirUmidade() {
     }
 
     const sendData = async () => {
-        console.log("sendData was called");
-        const data = (umidadeOn + ";" + umidadeOff);
-        fetchDefinirNiveisUmidade(data);
-        saveHumidityLevels(umidadeOn, umidadeOff);
+        try{
+            setWasRequested(true);
+            setIsSucceeded(null);
+            console.log("sendData was called");
+            const data = (umidadeOn + ";" + umidadeOff);
+            const response = await fetchDefinirNiveisUmidade(data);
+            console.log("A response: " + response);
+            if(response){
+                console.log("Deu verdadeiro");
+                setIsSucceeded(true);
+                saveHumidityLevels(umidadeOn, umidadeOff); 
+            }
+            else{
+                setIsSucceeded(false);
+            }  
+        }
+        catch(error){
+            console.log("Algum erro ocorreu -> " + error);
+        }   
     }
 
     useEffect(() => {
@@ -33,14 +50,14 @@ export default function DefinirUmidade() {
             <View style={styles.view}>
                 <Text style={styles.title}>Definir níveis de umidade</Text>
                 <View style={styles.box}>
-                    <Text style={styles.text}>Umidade mínima do solo: </Text>
+                    <Text style={styles.text}>Umidade mínima do solo (%): </Text>
                     <TextInput style={styles.input}
                         onChangeText={setUmidadeOn}
                         value={umidadeOn}
                         keyboardType="numeric"
                     />
 
-                    <Text style={styles.text}>Umidade máxima do solo: </Text>
+                    <Text style={styles.text}>Umidade máxima do solo (%): </Text>
                     <TextInput style={styles.input}
                         onChangeText={setUmidadeOff}
                         value={umidadeOff}
@@ -55,6 +72,14 @@ export default function DefinirUmidade() {
                     <Text style={styles.buttonText}>Salvar</Text>
                 </TouchableOpacity>
 
+                {wasRequested && (
+                    isSucceeded ? (
+                        <Text style={styles.greenText}>Níveis de umidade salvos com sucesso!</Text>)
+                        : (
+                        <Text style={styles.redText}>Os dados não foram salvos. Erro de comunicação</Text>) 
+                    )
+                }
+                
                 <Image
                     style={styles.image}
                     source={require("../../../assets/moistureHumidityImage.png")}

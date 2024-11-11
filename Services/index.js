@@ -10,15 +10,6 @@ const irrigationData = folderPath + "/IrrigationData.txt";
 //arquivo com os dados das bombas de água utilizadas
 const waterPumpData = folderPath + "/WaterPumpData.txt";
 
-
-//-----------------------------Será substituído--------------------------------//
-/*
-const path = FileSystem.documentDirectory + "/data";
-//usada para salvar os niveis de umidade e os dados da bomba de água
-const sysPath = FileSystem.documentDirectory + "/sysData";
-*/
-//----------------------------------------------------------------------------//
-
 //cria o diretório e os arquivos necessários para armazenar os dados caso não existam
 export async function criarArquivos(){
     try{
@@ -470,6 +461,7 @@ export function calcPeriod(time) {
     }
     catch (error) {
         console.log("Erro: em calcPeriod -> " + error.message);
+        return 0;
     }
 }
 

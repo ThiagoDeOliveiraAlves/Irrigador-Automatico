@@ -5,6 +5,7 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         backgroundColor: "#161617",
+        paddingBottom: 60,
     },
     box:{
         marginTop: 20,
@@ -44,6 +45,23 @@ const styles = StyleSheet.create({
         marginRight: 10,
         fontSize: 20,
         color: "white",
+    },
+    statusMessage:{
+        marginTop: 20,
+        fontSize: 20,
+        color: "lightblue",
+    },
+    waterpumpText:{
+        marginTop: 40,
+        color: "white",
+        fontSize: 20,
+    },
+    waterPumpOn:{
+        color: "#3cfa02",
+    },
+
+    waterPumpOff:{
+        color: "red",
     },
     button:{
         marginTop: 20,

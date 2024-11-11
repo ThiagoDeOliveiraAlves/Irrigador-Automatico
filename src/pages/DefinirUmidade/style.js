@@ -28,6 +28,17 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: "white",
     },
+    greenText:{
+        marginTop: 20,
+        fontSize: 18,
+        color: "lightgreen",
+    },
+    redText:{
+        marginTop: 20,
+        fontSize: 18,
+        color: "red",
+    },
+    
     input:{
         marginTop: 10,
         fontSize: 18,

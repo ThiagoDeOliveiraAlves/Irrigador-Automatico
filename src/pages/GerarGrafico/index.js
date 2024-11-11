@@ -7,7 +7,7 @@ import { CartesianChart, Line, useChartPressState } from "victory-native";
 import Animated, { useAnimatedProps } from "react-native-reanimated";
 import { useFont } from "@shopify/react-native-skia";
 
-export default function Dashboard() {
+export default function Grafico() {
 
     const [startDate, setStartDate] = React.useState(0);
     const [endDate, setEndDate] = React.useState(0);
@@ -102,6 +102,12 @@ export default function Dashboard() {
     const genDashboard = async () => {
         try{
             setAlertMessage("");
+            //serve para remmover o gráfico anterior, caso de algum erro na próxima geração
+            let aux = [];
+            setLitrosAgua(aux);
+            setDate(aux);
+            setKwh(aux);
+
             if(startDate != ""){
                 console.log("---------------------------");
                 console.log("format: " + format);
@@ -124,7 +130,6 @@ export default function Dashboard() {
                 }
                 else{
                     const periodArr = dashboardIrrigationPeriod(arr, format);
-
                     
                     const dateArr = dashboardIrrigationDate(arr, format);
 
@@ -132,8 +137,12 @@ export default function Dashboard() {
 
                     const kwhArr = await calcKWH(periodArr, format);
                     
+                    //Adicionando items nos vetores para melhorar a visualização do gráfico
+                    dateArr.unshift("-");
+                    litrosDeAgua.unshift(0);
+                    kwhArr.unshift(0);
                     dateArr.push("-");
-                    litrosAgua.push("-");
+                    litrosDeAgua.push("-");
                     kwhArr.push("-");
 
                     setLitrosAgua(litrosDeAgua);
@@ -162,19 +171,30 @@ export default function Dashboard() {
 
     //serve para definir uma largura para o gráfico de acordo com a quantidade de dados
     const calculateChartWidth = () => {
-        const minWidth = 400;
-        if(format == "days"){
-            const additionalWidthPerData = 50;
+        const minWidth = 200;
+        let additionalWidthPerData = 70;
+        if(format == "daily"){
+            additionalWidthPerData = 100;
             return minWidth + (data.length * additionalWidthPerData);
         }
-        const additionalWidthPerData = 70;
-        return minWidth + (data.length * additionalWidthPerData);
+        else if(format == "days"){
+            additionalWidthPerData = 80;
+            return minWidth + (data.length * additionalWidthPerData);
+        }
+        else if(format == "weeks"){
+            const additionalWidthPerData = 130;
+            return minWidth + (data.length * additionalWidthPerData);
+        }
+        else{
+           return minWidth + (data.length * additionalWidthPerData); 
+        }
+        
     };
 
     //serve para definir o valor tickcount dos gráficos
     const calculateTickCountX = () => {
         //console.log("TickCount: " + data.length);
-        return data.length - 1;
+        return data.length - 1;     
     }
 
     //teste
@@ -186,7 +206,7 @@ export default function Dashboard() {
     return (
         <ScrollView style={{ backgroundColor: "#161617" }}>
             <View style={styles.view}>
-                <Text style={styles.title}>DashBoard</Text>
+                <Text style={styles.title}>Gerar Gráficos</Text>
                 <View style={styles.box}>
                     <View style={styles.container}>
                         <Text style={styles.periodText}>Período:</Text>
@@ -228,7 +248,7 @@ export default function Dashboard() {
                     >
                         <Text style={styles.buttonText}>Gerar gráfico</Text>
                     </TouchableOpacity>
-                </View>
+            </View>
 
                 <Text style={styles.alertMessage}>{alertMessage}</Text>
             </View>
@@ -263,18 +283,20 @@ export default function Dashboard() {
                                         y: 5,
                                         x: calculateTickCountX()
                                     },
+                                    
                                     font: font,
                                     labelOffset: { x: 5, y: 20 },
                                     labelPosition: "outset",
                                     labelColor: "white",
                                     lineColor: "gray",
                                 }}
+                                
                             >
                                 {({ points }) => (
                                     <>
                                         <Line points={points.litros} color="#31c2c4" strokeWidth={3} />
                                     </>
-                                )}
+                                )}    
                             </CartesianChart>
                         </View>
                     </ScrollView>
