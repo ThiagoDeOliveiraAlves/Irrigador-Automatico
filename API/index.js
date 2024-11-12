@@ -1,10 +1,28 @@
-import {saveIrrigationHistory} from "../Services";
+import {saveIrrigationHistory, getEspUrl} from "../Services";
 
-const baseUrl = "http:/192.168.0.56";
+//const baseUrl = "http:/192.168.0.56";
+let baseUrl = "";
 //const baseUrl = "http:/192.168.43.34";
+
+//usada para atualizar a baseUrl quando o usuário mudar a url do ESP8266
+export async function updateBaseUrl(url){
+    console.log("UpdateBaseurl was called");
+    console.log("last: " + baseUrl);
+    baseUrl = url.trim();
+    console.log("new url: " + baseUrl);
+}
+
+//usada para inicializar a baseUrl com a url do ESP salva no database (quando o sistema é aberto, baseurl por padrão vale "")
+async function setBaseUrl(){
+    if(baseUrl == ""){
+        console.log("Atribuindo baseUrl");
+        baseUrl = await getEspUrl();
+    }
+}
 
 //função usada para definir um tempo limite de espera de uma requisição
 async function fetchWithTimeout(fetchFunction, timeout = 5000) {
+    await setBaseUrl();
     return Promise.race([
         fetchFunction(),
         new Promise((_, reject) =>
@@ -16,6 +34,7 @@ async function fetchWithTimeout(fetchFunction, timeout = 5000) {
 // GET
 export async function fetchAtualizar() {
     try {
+        await setBaseUrl();
         const fetchFunction = () => fetch(baseUrl + "/atualizar");
         const response = await fetchWithTimeout(fetchFunction, 5000); // Timeout de 5 segundos
         const data = await response.text();
@@ -29,6 +48,7 @@ export async function fetchAtualizar() {
 //POST
 export async function fetchDefinirNiveisUmidade(umidade){
     try{
+        await setBaseUrl();
         let isSucceeded = false;
         const response = await fetch(baseUrl + "/definirNiveis",{
             method: "POST",
@@ -54,6 +74,7 @@ export async function fetchDefinirNiveisUmidade(umidade){
 //GET
 export async function fetchGetHistoricoIrrigacao(){
     try{
+        await setBaseUrl();
         const fetchFunction = () => fetch(baseUrl + "/enviarDadosIrrigacao");
         const response = await fetchWithTimeout(fetchFunction, 5000);
         const data = await response.text();
@@ -70,6 +91,7 @@ export async function fetchGetHistoricoIrrigacao(){
 
 export async function fetchLigarControleManual(){
     try{
+        await setBaseUrl();
         const response = await fetch(baseUrl + "/ligarControleManual", {
             method: "POST",
             headers:{
@@ -85,6 +107,7 @@ export async function fetchLigarControleManual(){
 }
 export async function fetchDesLigarControleManual(){
     try{
+        await setBaseUrl();
         const response = await fetch(baseUrl + "/desligarControleManual", {
             method: "POST",
             headers:{
@@ -101,6 +124,7 @@ export async function fetchDesLigarControleManual(){
 
 export async function fetchLigarBomba(){
     try{
+        await setBaseUrl();
         const response = await fetch(baseUrl + "/ligarBomba", {
             method: "POST",
             headers:{
@@ -117,6 +141,7 @@ export async function fetchLigarBomba(){
 }
 export async function fetchDesligarBomba(){
     try{
+        await setBaseUrl();
         const response = await fetch(baseUrl + "/desligarBomba", {
             method: "POST",
             headers:{

@@ -3,6 +3,8 @@ import { DateTime, Duration } from "luxon";
 
 //diretorio onde ficam os arquivos do banco de dados
 const folderPath = FileSystem.documentDirectory + "/IrrigadorAutomatico";
+//armazena a url do ESP8266
+const espUrl = folderPath + "/Esp8266Url.txt";
 //armazena os níveis de umidade mínimo e máximo
 const humidityLevels = folderPath + "/HumidityLevels.txt"
 //arquivo com o historico de irrigações
@@ -19,6 +21,9 @@ export async function criarArquivos(){
             console.log("O diretório não existe. Criando pasta irrigadorAutomatico");
             //cria a pasta IrrigadorAutomatico
             await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
+            
+            //cria o arquivo Esp8266Url.txt
+            await FileSystem.writeAsStringAsync(espUrl, "");
 
             //cria o arquivo HumidityLevels.txt
             await FileSystem.writeAsStringAsync(humidityLevels, "20-40");
@@ -40,6 +45,11 @@ export async function criarArquivos(){
         else{
             //no caso de algum arquivo ter sido excluido//
 
+            fileInfo = await FileSystem.getInfoAsync(espUrl);
+            if(!fileInfo.exists){
+                await FileSystem.writeAsStringAsync(espUrl, "");
+            }
+
             fileInfo = await FileSystem.getInfoAsync(humidityLevels);
             if(!fileInfo.exists){
                 //cria e insere o valor padrão para níveis de umidade
@@ -59,6 +69,48 @@ export async function criarArquivos(){
     }
     catch (error){
         console.log("Erro: em criarArquivos -> " + error.mesage);
+    }
+}
+
+//______________________________________Url do ESP8266______________________________________//
+export async function saveEspUrl(url){
+    try{
+        await criarArquivos();
+
+        let fileInfo = await FileSystem.getInfoAsync(espUrl);  
+        if(fileInfo.exists){
+            url = url.trim();
+            let content = "";
+            content = await FileSystem.readAsStringAsync(espUrl);
+            content = content.trim();
+            //escreve a nova url
+            await FileSystem.writeAsStringAsync(espUrl, url);
+
+            console.log("URL do esp foi atualizada");
+            console.log("De: " + content);
+            console.log("Para: " + url);
+        }
+    }
+    catch(error){
+        console.log("Erro: em saveEspUrl -> " + error.message);
+    }
+}
+
+export async function getEspUrl(){
+    try{
+        await criarArquivos();
+
+        let fileInfo = await FileSystem.getInfoAsync(espUrl);
+        if (fileInfo.exists) {  
+            let url = "";
+            url = await FileSystem.readAsStringAsync(espUrl);
+            url = url.trim();
+            console.log("url do esp: " + url);
+            return url;
+        }
+    }
+    catch(error){
+        console.log("Erro: em getEspUrl -> " + error.message);
     }
 }
 
@@ -346,20 +398,25 @@ export async function saveIrrigationHistory(response) {
 
                 let pos = 0;
                 let data = "";
+                let hasFinishTime = false;
 
                 let currentWaterPumpId = await getCurrentWPId();
 
+                let allReg = content.split("\n")
+                let lastPos = allReg.length;
+                let lastReg = allReg[lastPos - 1];
+
                 //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
-                if (arr[pos].charAt(0) == "-") {
-                    let allReg = content.split("\n")
-                    let lastPos = allReg.length;
-                    let lastReg = allReg[lastPos - 1];
-                    
-                    if(lastReg.length > 10){
+                if (arr[pos].charAt(0) == "-") { 
+                    //verificando a consistência do último registro salvo no database   
+                    if(lastReg.length > 10 && !(lastReg.includes('-'))){
+                        console.log("inclui o - ? " + lastReg.includes('-'));
                         data += arr[pos];
                         pos++;
+                        hasFinishTime = true;
                     }
                     else{
+                        console.log("Descartando o horario de termino enviado");
                         pos++;
                     }
                     
@@ -374,12 +431,22 @@ export async function saveIrrigationHistory(response) {
                     pos++
                 }
 
+                if(!lastReg.includes('-') && !hasFinishTime){
+                    //inconsistência no database (o ultimo reg do database possuiu somente horario de inicio, e o eesp nao enviou seu horario de termino), correção
+                    console.log("inconsistência identificada: " + lastReg);
+                    content = allReg[0];
+                    for (let i = 1; i < (allReg.length - 1); i++) { 
+                        if(allReg[i].length > 1){
+                            content += "\n" + allReg[i];
+                        }
+                    }
+                }
+
                 //adicionando os registros restantes com quebra de linha
-                for (pos; pos < arr.length; pos++) { 
+                for (pos; pos < arr.length; pos++) {  
                     if(arr[pos].length > 16){
                         data +="\n" + currentWaterPumpId + " " + arr[pos];
                     }
-                    
                 }
 
                 content += data;

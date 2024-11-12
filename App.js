@@ -10,6 +10,7 @@ import GerarGraficos from "./src/pages/GerarGrafico";
 import DefinirUmidade from "./src/pages/DefinirUmidade";
 import GerenciarSensor from "./src/pages/GerenciarSensor";
 import GerenciarBomba from './src/pages/GerenciarBomba';
+import GerenciarEsp from './src/pages/GerenciarEsp';
 import PagDeTestes from './src/pages/PagDeTestes';
 import Testes from "./src/pages/Teste"
 import { UmidadeProvider } from './Services/Context';
@@ -27,6 +28,7 @@ export default function App() {
       {/*<Drawer.Screen name="Gerenciar sensores" component={GerenciarSensor}/>*/}
       <Drawer.Screen name="Gerenciar Bomba" component={GerenciarBomba}/>
       <Drawer.Screen name="Gerar Gráficos" component={GerarGraficos}/>
+      <Drawer.Screen name="Gerenciar ESP8266" component={GerenciarEsp}/>
       {/*<Drawer.Screen name="Página de testes" component={PagDeTestes}/>*/}
       {/*<Drawer.Screen name="Testes" component={Testes}/>*/}
       
