@@ -351,9 +351,18 @@ export async function saveIrrigationHistory(response) {
 
                 //Se sim, significa que o primeiro dado é o horário que a irrigação terminou
                 if (arr[pos].charAt(0) == "-") {
-                    //content = content.concat(arr[0] + ";");
-                    data += arr[pos];
-                    pos++;
+                    let allReg = content.split("\n")
+                    let lastPos = allReg.length;
+                    let lastReg = allReg[lastPos - 1];
+                    
+                    if(lastReg.length > 10){
+                        data += arr[pos];
+                        pos++;
+                    }
+                    else{
+                        pos++;
+                    }
+                    
                 }
 
                 //Para não pular a primeira linha caso o arquivo esteja vazio

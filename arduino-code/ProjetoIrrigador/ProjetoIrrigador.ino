@@ -6,6 +6,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <TimeLib.h>
+#include <EEPROM.h>
 
 #define umidadeInput A0
 //é a porta digital D01
@@ -90,9 +91,12 @@ void handleDefinirNiveis(){
   //precisei colocar 1, index porque data vem com aspas
   umidadeON = (data.substring(1, index)).toInt();
   umidadeOFF = (data.substring(index + 1)).toInt();
+  EEPROM.write(1, umidadeON);
+  EEPROM.write(2, umidadeOFF);
+  EEPROM.commit();
   Serial.println("Umidade On: " + String(umidadeON));
   Serial.println("Umidade OFF: " + String(umidadeOFF));
-
+  server.send(200, "text/plain", String(true));
 }
 
 void handleLigarControleManual(){
@@ -163,6 +167,19 @@ void setHistoricoOff(){
 void setup() {
   pinMode(bombaInput, OUTPUT);
   Serial.begin(115200);
+
+  EEPROM.begin(512); 
+  
+  if(EEPROM.read(0) == 0){
+    EEPROM.write(1, umidadeON);
+    EEPROM.write(2, umidadeOFF);
+    EEPROM.write(0, 1);
+    EEPROM.commit();
+  }
+  else{
+    umidadeON = EEPROM.read(1);
+    umidadeOFF = EEPROM.read(2);
+  }
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {

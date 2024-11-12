@@ -1,7 +1,9 @@
-import React, { useEffect} from "react";
+import React, { useEffect, useContext} from "react";
 import {View, Text, TouchableOpacity, Switch, TextInput} from "react-native";
 import { fetchAtualizar, fetchLigarBomba, fetchDesligarBomba, fetchLigarControleManual, fetchDesLigarControleManual } from "../../../API";
 import { getCurrentWPData, getDadosBomba, setWaterPumpData } from "../../../Services";
+import { UmidadeContext, UmidadeProvider } from "../../../Services/Context";
+
 import styles from "./style";
 import { ScrollView } from "react-native-gesture-handler";
 
@@ -10,20 +12,36 @@ import { ScrollView } from "react-native-gesture-handler";
 
 export default function GerenciarBomba(){
 
+    let {umidadeMedia, bombaStatus, tentativas, alertMessage, isConnected, conectar} = useContext(UmidadeContext);
+
     const [vazao, setVazao] = React.useState(null);
     const [potencia, setPotencia] = React.useState(null);
-    const [bombaStatus, setBombaStatus] = React.useState(false);
     const [statusMessage, setStatusMessage] = React.useState("");
     const [isEnabled, setIsEnabled] = React.useState(false);
 
+    const connect = () =>{
+        conectar();
+    }
+
     const toggleSwitch = () => {
         if(isEnabled == false){
-            setIsEnabled(true);
-            ligarControleManual();
+            if(isConnected){
+                setIsEnabled(true);
+                ligarControleManual();
+            }
+            else{
+                //setar uma mensagem de erro
+            }
         }
         else{
-            setIsEnabled(false);
-            desligarControleManual();
+            if(isConnected){
+                setIsEnabled(false);
+                desligarControleManual();
+            }
+            else{
+                //setar uma mensagem de erro
+            }
+            
         }
         //setIsEnabled(previousState => !previousState);    
     }
@@ -41,6 +59,7 @@ export default function GerenciarBomba(){
             const result = await fetchLigarBomba();
             setStatusMessage(result);
             let data = await fetchAtualizar();
+            /*
             const dataArray = data.split(";");
             if(dataArray[1] == "1"){
                 setBombaStatus(true);
@@ -48,6 +67,7 @@ export default function GerenciarBomba(){
             else{
                 setBombaStatus(false);
             }
+                */
         }
         else{
             setStatusMessage("É necessário habilitar o controle manual");
@@ -105,70 +125,90 @@ export default function GerenciarBomba(){
 
     return(
         <ScrollView>
-            <View style={styles.view}>
-                <Text style={styles.title}>Gerenciar Bomba d'água</Text>
+            <UmidadeProvider>
+                <View style={styles.view}>
+                    <Text style={styles.title}>Gerenciar Bomba d'água</Text>
 
-                <View style={styles.box}>
-                    <View style={styles.container}>
-                        <Text style={styles.boxText}>Vazão (L/H):         </Text>
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setVazao}
-                            value={vazao}
-                            keyboardType="numeric"
-                        />
+                    <View style={styles.box}>
+                        <View style={styles.container}>
+                            <Text style={styles.boxText}>Vazão (L/H):         </Text>
+                            <TextInput
+                                style={styles.input}
+                                onChangeText={setVazao}
+                                value={vazao}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.container}>
+                            <Text style={styles.boxText}>Potência (W/H):  </Text>
+                            <TextInput
+                                style={styles.input}
+                                onChangeText={setPotencia}
+                                value={potencia}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={(() => saveData())}
+                        >
+                            <Text style={styles.buttonText}>Salvar</Text>
+                        </TouchableOpacity>
                     </View>
-                    <View style={styles.container}>
-                        <Text style={styles.boxText}>Potência (W/H):  </Text>
-                        <TextInput
-                            style={styles.input}
-                            onChangeText={setPotencia}
-                            value={potencia}
-                            keyboardType="numeric"
-                        />
+
+                    <View style={styles.box}>
+                        <Text style={styles.lightBlueTitle}>Status do sistema:</Text>
+                        <View style={styles.container1}>
+                            <Text style={styles.text}>Umidade média: <Text style={styles.umidityText}>{umidadeMedia}%</Text></Text>
+                            {bombaStatus?
+                            <Text style={styles.text}>Estado da bomba: <Text style={styles.greenText}>Ligada</Text></Text>
+                            :
+                            <Text style={styles.text}>Estado da bomba: <Text style={styles.redText}>Desligada</Text></Text>
+                            }
+                        </View>
+                        {isConnected?
+                        <Text style={styles.greenText}>Sincronizado</Text>    
+                        :
+                        <Text style={styles.redText}>Não sincronizado!</Text>
+                        }
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={(() => connect())}
+                        >
+                            <Text style={styles.buttonText}>Conectar</Text>
+                        </TouchableOpacity>
                     </View>
+
+                    <Text style={styles.title}>Controlar bomba manualmente</Text>
+                    <Text style={styles.dangerText}>Atenção: ao habilitar o controle manual, o sistema deixará de irrigar o solo de forma automática. Habilitando o controle manual, a bomba de água só ligará e desligará se você solicitar!</Text>
+                    <Text style={styles.lightBlueTitle}>Habilitar controle manual</Text>
+                    <Switch
+                        trackColor={{ false: "#767577", true: "#81b0ff"}}
+                        thumbColor={isEnabled? "#f5dd4b" : "#f4f3f4"}
+                        ios_backgroundColor="#3e3e3e"
+                        onValueChange={toggleSwitch}
+                        value={isEnabled}
+                    ></Switch>
+
+                    {isConnected? null : <Text style={styles.alertMessage}>{alertMessage}</Text>}
+                    <Text style={styles.statusMessage}>{statusMessage}</Text>
+
                     <TouchableOpacity
                         style={styles.button}
-                        onPress={(() => saveData())}
+                        onPress={(() => ligarBomba())}
                     >
-                        <Text style={styles.buttonText}>Salvar</Text>
+                        <Text style={styles.buttonText}>Ligar</Text>
+                    </TouchableOpacity>
+
+
+                    <TouchableOpacity
+                        style={styles.redButton}
+                        onPress={(() => desligarBomba())}
+                    >
+                        <Text style={styles.buttonText}>Desligar</Text>
                     </TouchableOpacity>
                 </View>
-                {bombaStatus?
-                <Text style={styles.waterpumpText}>Estado da bomba: <Text style={styles.waterPumpOn}>Ligada</Text></Text>
-                :
-                <Text style={styles.waterpumpText}>Estado da bomba: <Text style={styles.waterPumpOff}>Desligada</Text></Text>
-                }
-                
-                <Text style={styles.title}>Controlar bomba manualmente</Text>
-                <Text style={styles.dangerText}>Atenção: ao habilitar o controle manual, o sistema deixará de irrigar o solo de forma automática. Habilitando o controle manual, a bomba de água só ligará e desligará se você solicitar!</Text>
-                <Text style={styles.text}>Habilitar controle manual</Text>
-                <Switch
-                    trackColor={{ false: "#767577", true: "#81b0ff"}}
-                    thumbColor={isEnabled? "#f5dd4b" : "#f4f3f4"}
-                    ios_backgroundColor="#3e3e3e"
-                    onValueChange={toggleSwitch}
-                    value={isEnabled}
-                ></Switch>
-
-                <Text style={styles.statusMessage}>{statusMessage}</Text>
-
-                <Text style={styles.title}>Ligar bomba</Text>
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={(() => ligarBomba())}
-                >
-                    <Text style={styles.buttonText}>Ligar</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.title}>Desligar bomba</Text>
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={(() => desligarBomba())}
-                >
-                    <Text style={styles.buttonText}>Desligar</Text>
-                </TouchableOpacity>
-            </View>
+            </UmidadeProvider>
         </ScrollView>
     );
 }

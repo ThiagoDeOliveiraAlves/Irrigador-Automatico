@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useRef, useState } from "react";
-import { fetchAtualizar } from "../../API";
+import { fetchAtualizar, fetchGetHistoricoIrrigacao } from "../../API";
 
 export const UmidadeContext  = createContext();
 
@@ -32,9 +32,13 @@ export const UmidadeProvider = ({ children }) => {
         const fetchUmidade = async () => {
           try {
             console.log("Chamando... tentativa: " + tentativas);
-            const response = await fetchAtualizar();
-            const data = await response;
+            [umidadeData] = await Promise.all([
+              fetchAtualizar(),
+              fetchGetHistoricoIrrigacao()
+            ]);
+            const data = await umidadeData;
             const dataArray = data.split(';');
+            
             setUmidadeMedia(dataArray[0]);
             setBombaStatus(dataArray[1] === '1');
             setAlertMessage("Sincronizado");

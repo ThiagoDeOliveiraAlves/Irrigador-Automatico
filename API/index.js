@@ -26,23 +26,6 @@ export async function fetchAtualizar() {
     }
 }
 
-
-/*
-//GET
-export async function fetchAtualizar(){
-    try{
-        const response = await fetch(baseUrl + "/atualizar");
-        const data = await response.text();
-        //console.log(data);
-        return(data);
-    }
-    catch(error){
-        console.log("Erro de comunicação");
-        throw error;
-    }
-}
-    */
-
 //POST
 export async function fetchDefinirNiveisUmidade(umidade){
     try{
@@ -84,24 +67,6 @@ export async function fetchGetHistoricoIrrigacao(){
         console.log("Erro de comunicação");
     }
 }
-
-/*
-//GET
-export async function fetchGetHistoricoIrrigacao(){
-    try{
-        const response = await fetch(baseUrl + "/enviarDadosIrrigacao");
-        const data = await response.text();
-        if(data.length > 1){
-           saveIrrigationHistory(data); 
-        }
-        
-        return data;
-    }
-    catch(error){
-        console.log("Erro de comunicação");
-    }
-}
-    */
 
 export async function fetchLigarControleManual(){
     try{

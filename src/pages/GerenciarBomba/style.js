@@ -23,21 +23,40 @@ const styles = StyleSheet.create({
         marginVertical: 5,
         alignContent: "center",
     },
+    container1:{
+        flexDirection: "column",
+        marginVertical: 5,
+        alignContent: "center",
+    },
     
     title:{
         marginTop: 20,
         fontSize: 24,
         color: "#00A038",
     },
+    lightBlueTitle:{
+        marginTop: 2,
+        fontSize: 20,
+        color: "lightblue",
+    },
     text:{
-        marginTop: 20,
-        fontSize: 18,
+        marginTop: 5,
+        fontSize: 20,
         color: "white",
+    },
+    
+    umidityText:{
+    
+        fontSize: 20,
+        color: "#00A038",
     },
     dangerText:{
         marginTop: 20,
+        marginLeft: 10,
+        marginRight: 10,
+        marginBottom: 10,
         fontSize: 18,
-        color: "red",
+        color: "#cf0404",
         textAlign: "center",
     },
     boxText:{
@@ -49,23 +68,36 @@ const styles = StyleSheet.create({
     statusMessage:{
         marginTop: 20,
         fontSize: 20,
-        color: "lightblue",
+        color: "purple",
+    },
+    alertMessage:{
+        marginTop: 20,
+        fontSize: 20,
+        color: "red",
     },
     waterpumpText:{
         marginTop: 40,
         color: "white",
         fontSize: 20,
     },
-    waterPumpOn:{
+    greenText:{
         color: "#3cfa02",
+        fontSize: 20,
     },
 
-    waterPumpOff:{
+    redText:{
         color: "red",
+        fontSize: 19,
     },
     button:{
         marginTop: 20,
         backgroundColor: "blue",
+        borderRadius: 20,
+        zIndex: 2,
+    },
+    redButton:{
+        marginTop: 20,
+        backgroundColor: "darkred",
         borderRadius: 20,
         zIndex: 2,
     },

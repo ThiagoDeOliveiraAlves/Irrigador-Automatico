@@ -171,18 +171,19 @@ export default function Grafico() {
 
     //serve para definir uma largura para o gráfico de acordo com a quantidade de dados
     const calculateChartWidth = () => {
-        const minWidth = 200;
+        const minWidth = 0;
         let additionalWidthPerData = 70;
+
         if(format == "daily"){
-            additionalWidthPerData = 100;
+            additionalWidthPerData = 120;
             return minWidth + (data.length * additionalWidthPerData);
         }
         else if(format == "days"){
-            additionalWidthPerData = 80;
+            additionalWidthPerData = 100;
             return minWidth + (data.length * additionalWidthPerData);
         }
         else if(format == "weeks"){
-            const additionalWidthPerData = 130;
+            const additionalWidthPerData = 160;
             return minWidth + (data.length * additionalWidthPerData);
         }
         else{

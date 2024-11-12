@@ -4,16 +4,7 @@ import {fetchAtualizar, fetchGetHistoricoIrrigacao} from "../../../API";
 import { UmidadeContext, UmidadeProvider } from "../../../Services/Context";
 import styles from "./style";
 
-
-
 export default function Inicio(){
-
-    
-    
-    /*
-    const [umidadeMedia, setUmidadeMedia] = React.useState(0);
-    const [bombaStatus, setBombaStatus] = React.useState(false);
-    */
 
     let {umidadeMedia, bombaStatus, tentativas, alertMessage, isConnected, conectar} = useContext(UmidadeContext);
 
@@ -24,56 +15,11 @@ export default function Inicio(){
     const getUmidade = async () =>{
         try{
             conectar();
-
-
-
-            //setErrorMessage("");
-
-            /*
-            setComunicationErrorQuant(0);
-
-            const data = await fetchAtualizar();
-            await fetchGetHistoricoIrrigacao();
-            const dataArray = data.split(";");
-            setUmidadeMedia(dataArray[0]);
-            if(dataArray[1] == "1"){
-                setBombaStatus(true);
-            }
-            else{
-                setBombaStatus(false);
-            }
-            */
         }
         catch(error){
             setErrorMessage("Erro de comunicação");
         }
     }
-
-    //solicita os níveis de umidade atuais 
-    /*
-    useEffect(() => {
-        if (comunicationErrorQuant < 3) {
-            const fetchData = async () => {
-              try {
-                const data = await fetchAtualizar();
-                await fetchGetHistoricoIrrigacao();
-                
-                const dataArray = data.split(";");
-                setUmidadeMedia(dataArray[0]);
-                setBombaStatus(dataArray[1] === "1");
-              } 
-              catch (error) { 
-                setComunicationErrorQuant((prev) => prev + 1);
-                console.log("Erro de comunicação:", comunicationErrorQuant);
-                setErrorMessage("Erro de comunicação");
-              }
-            };
-
-            const intervalId = setInterval(fetchData, 2000);
-            return () => clearInterval(intervalId);
-        }
-    }, [comunicationErrorQuant])
-    */
 
     return(
         <View style={styles.view}>
