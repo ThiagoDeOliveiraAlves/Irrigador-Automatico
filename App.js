@@ -29,7 +29,7 @@ export default function App() {
       <Drawer.Screen name="Gerenciar Bomba" component={GerenciarBomba}/>
       <Drawer.Screen name="Gerar Gráficos" component={GerarGraficos}/>
       <Drawer.Screen name="Gerenciar ESP8266" component={GerenciarEsp}/>
-      {/*<Drawer.Screen name="Página de testes" component={PagDeTestes}/>*/}
+      {/*<Drawer.Screen name="." component={PagDeTestes}/>*/}
       {/*<Drawer.Screen name="Testes" component={Testes}/>*/}
       
     </Drawer.Navigator>

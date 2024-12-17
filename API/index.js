@@ -1,8 +1,6 @@
 import {saveIrrigationHistory, getEspUrl} from "../Services";
 
-//const baseUrl = "http:/192.168.0.56";
 let baseUrl = "";
-//const baseUrl = "http:/192.168.43.34";
 
 //usada para atualizar a baseUrl quando o usuário mudar a url do ESP8266
 export async function updateBaseUrl(url){
@@ -21,7 +19,7 @@ async function setBaseUrl(){
 }
 
 //função usada para definir um tempo limite de espera de uma requisição
-async function fetchWithTimeout(fetchFunction, timeout = 5000) {
+async function fetchWithTimeout(fetchFunction, timeout = 2000) {
     await setBaseUrl();
     return Promise.race([
         fetchFunction(),

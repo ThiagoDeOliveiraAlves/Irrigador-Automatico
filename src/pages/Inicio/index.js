@@ -1,6 +1,5 @@
-import React, { useEffect, useContext } from "react";
+import React, { useContext } from "react";
 import {View, Text, TouchableOpacity, FlatList} from "react-native";
-import {fetchAtualizar, fetchGetHistoricoIrrigacao} from "../../../API";
 import { UmidadeContext, UmidadeProvider } from "../../../Services/Context";
 import styles from "./style";
 
@@ -10,7 +9,6 @@ export default function Inicio(){
 
 
     const [errorMessage, setErrorMessage] = React.useState("");
-    const [comunicationErrorQuant, setComunicationErrorQuant] = React.useState(0);
     
     const getUmidade = async () =>{
         try{

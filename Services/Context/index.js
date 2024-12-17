@@ -47,7 +47,7 @@ export const UmidadeProvider = ({ children }) => {
             setTimeout(() => {
               setTentativas(0);
               setIsFetching(false);
-          }, 5000);
+          }, 2000);
           
           } catch (error) {
             console.error('Erro ao buscar dados de umidade:', error);

@@ -12,11 +12,15 @@
 //é a porta digital D01
 #define bombaInput 5
 
+unsigned long lastMillis = 0;
+unsigned long intervalo = 500;
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
-const char* ssid = "*****";
-const char* password = "******";
+const char* ssid = "*******";
+const char* password = "********";
+
 
 float umidadeAtual;
 int umidadeON = 20;
@@ -31,62 +35,54 @@ int i = 0;
 
 ESP8266WebServer server(80);
 
-void handleRoot() {
-  server.send(200, "text/plain", "conectado");
-}
 
-void handleNotFound() {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
+
+void adicionarCabecalhoFechamento() {
+  server.sendHeader("Connection", "close"); // Fecha conexão após resposta
 }
 
 float calcularUmidade(){
   uint16_t valor = analogRead(umidadeInput);
-  float umidade = (valor - 380) / 6.44;
-  umidade = 100 - umidade;
+  //float umidade = (valor - 380) / 6.44;
+  float umidade = (valor - 1024)*(-100)/(1024-320);
+  //umidade = 100 - umidade;
 
   return(umidade);
 }
 
+void handleRoot() {
+  adicionarCabecalhoFechamento();
+  server.send(200, "text/plain", "conectado");
+}
+
+void handleNotFound() {
+  String message = "404 - Not Found\n";
+  adicionarCabecalhoFechamento();
+  server.send(404, "text/plain", message);
+}
+
 void handleAtualizar() {
-  Serial.println("handleUmidadeAtual foi requisitada!!");
   String data;
   float umidade = calcularUmidade();
-  if(umidade <0){
-    data = "0;" + String(bombaStatus? 1 : 0);
-    server.send(200, "text/plain", data);//Envia a umidade e o estado da bomba separado por ";". Exemplo: 50;1
-  }
-  else if(umidade > 100){
-    data = "100;" + String(bombaStatus? 1 : 0);
-    server.send(200, "text/plain", data);
-  }
-  else{
-    Serial.println("Umidade do solo: " +  String(umidade) + "%");
-    data = String(umidade, 0) + ";" + (bombaStatus? "1" : "0"); // Limita a duas casas decimais
-    Serial.println("Dado enviado: " + data);
-    server.send(200, "text/plain", data);
-  }
+  
+  if (umidade < 0) umidade = 0;
+  if (umidade > 100) umidade = 100;
+
+  data = String(umidade, 0) + ";" + (bombaStatus ? "1" : "0");
+  adicionarCabecalhoFechamento();
+  server.send(200, "text/plain", data);
 }
 
 void handleEnviarDadosIrrigacao(){
+    adicionarCabecalhoFechamento();
     server.send(200, "text/plain", historicoIrrigacao);
     historicoIrrigacao = "";
 }
 
 void handleDefinirNiveis(){
-  Serial.println("API definir níveis de umidade foi requisitada");
+  //Serial.println("API definir níveis de umidade foi requisitada");
   String data = server.arg("plain");
-  Serial.println("Valor recebido: " + data);
+  //Serial.println("Valor recebido: " + data);
   int index = data.indexOf(";");
   //precisei colocar 1, index porque data vem com aspas
   umidadeON = (data.substring(1, index)).toInt();
@@ -94,42 +90,47 @@ void handleDefinirNiveis(){
   EEPROM.write(1, umidadeON);
   EEPROM.write(2, umidadeOFF);
   EEPROM.commit();
-  Serial.println("Umidade On: " + String(umidadeON));
-  Serial.println("Umidade OFF: " + String(umidadeOFF));
+  //Serial.println("Umidade On: " + String(umidadeON));
+  //Serial.println("Umidade OFF: " + String(umidadeOFF));
+  adicionarCabecalhoFechamento();
   server.send(200, "text/plain", String(true));
 }
 
 void handleLigarControleManual(){
   controleManual = true;
   Serial.println("--Controle manual habilitado--");
+  adicionarCabecalhoFechamento();
   server.send(200, "text/plain", "Controle manual habilitado");
 }
+
 void handleDesligarControleManual(){
   controleManual = false;
     Serial.println("--Controle manual desabilitado--");
+    adicionarCabecalhoFechamento();
     server.send(200, "text/plain", "Controle manual desabilitado");
 }
 
 void handleLigarBomba(){
-  Serial.println("Ligar bomba foi requisitado");
   if(controleManual == true){
     if(bombaStatus == false){
       bombaStatus = true;
       digitalWrite(bombaInput, HIGH);
       //SALVA NO HISTÓRICO O MOMENTO QUE ELA LIGOU
       setHistoricoOn();
+      adicionarCabecalhoFechamento();
       server.send(200, "text/plain", "Bomba de água foi ligada");
       return;
     }
+    adicionarCabecalhoFechamento();
     server.send(200, "text/plain", "A bomba já está ligada");
     return;
   }
+  adicionarCabecalhoFechamento();
   server.send(200, "text/plain", "Habilite o controle manual");
-
 }
 
 void handleDesligarBomba(){
-  Serial.println("Desligar bomba foi requisitado");
+  //Serial.println("Desligar bomba foi requisitado");
 
   if(controleManual == true){
     if(bombaStatus == true){
@@ -137,12 +138,15 @@ void handleDesligarBomba(){
       digitalWrite(bombaInput, LOW);
       //SALVA NO HISTÓRICO O MOMENTO QUE ELA DESLIGOU
       setHistoricoOff();
+      adicionarCabecalhoFechamento();
       server.send(200, "text/plain", "Bomba de água foi desligada");
       return;
     }
+    adicionarCabecalhoFechamento();
     server.send(200, "text/plain", "A bomba já está desligada");
     return;
   }
+  adicionarCabecalhoFechamento();
   server.send(200, "text/plain", "Habilite o controle manual");
 }
 
@@ -214,19 +218,32 @@ void setup() {
 
 void loop() {
   server.handleClient();
-  if (millis() % 2000 == 0) { // Verifica a cada 2 segundos
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - lastMillis >= intervalo) {
+    lastMillis = currentMillis;
     umidadeAtual = calcularUmidade();
+
     if(controleManual == false){
     // Verifica se a bomba deve ser ligada ou desligada. usar o estado da bomba vai ajudar a garantir que sejam salvos somente um horário por ativação e um para desativação.
+      int regulation = 10;
+
+      if(umidadeOFF - 10 < 0){
+        regulation = 0;
+      }
+
       if (bombaStatus == false && umidadeAtual < umidadeON) {
         setHistoricoOn();
-        Serial.println("Variavel historico de irrigação: ON -->" + historicoIrrigacao);
+        //Serial.println("Variavel historico de irrigação: ON:");
+        //Serial.println(historicoIrrigacao);
         bombaStatus = true;
         digitalWrite(bombaInput, HIGH);
-      } else if (bombaStatus == true && umidadeAtual >= umidadeOFF) {
+      } else if (bombaStatus == true && umidadeAtual >= (umidadeOFF - regulation)) {
         bombaStatus = false;
         setHistoricoOff();
-        Serial.println("Variavel historico de irrigação: OFF -->" + historicoIrrigacao);
+        //Serial.println("Variavel historico de irrigação: OFF");
+        //Serial.println(historicoIrrigacao);
+
         digitalWrite(bombaInput, LOW);
       }
     }

@@ -722,7 +722,7 @@ export function dashboardIrrigationDate(arr, format) {
             //obs: tem que ver se o vetor não possui posições vazias.
             //nesse caso, teremos que armazenar os horários ao invés das datas
             let timeArr = [];
-            let period = 0;
+            //let period = 0;
             for(let item of arr){
                if(item.length != 0){
                 let period = getRegPeriod(item);
